@@ -6,6 +6,7 @@ import TimerPage from './pages/TimerPage'
 import { KonstaProvider } from 'konsta/react'
 import { App as KonstaApp } from 'konsta/react'
 import CreateEventPage from './pages/CreateEventPage'
+import EditEventPage from './pages/EditEventPage'
 
 function App() {
   const router = createBrowserRouter([
@@ -28,6 +29,10 @@ function App() {
     {
       path: '/create',
       element: <CreateEventPage />
+    },
+    {
+      path: '/edit/:eventId',
+      element: <EditEventPage />
     }
   ])
 

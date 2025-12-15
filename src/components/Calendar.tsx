@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Sunrise, Sun, Moon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+// 🚨 ADDED: useNavigate for navigation
+import { useNavigate } from 'react-router';
 import {
     format, addDays, subDays, startOfWeek, isSameDay,
     parseISO, isWithinInterval, getDay, differenceInCalendarWeeks,
@@ -14,46 +16,35 @@ const EventIcon = ({ name, size = 18 }: { name: string, size?: number }) => {
     return Icon ? <Icon size={size} strokeWidth={2} /> : null;
 };
 
-// --- NEW LOGIC HELPER ---
-/**
- * Determines if a given habit event should occur on a specific date,
- * respecting the repeat interval (Every X Weeks/Months/Years).
- */
+// --- LOGIC HELPER ---
 const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
     const start = parseISO(event.startDate);
-    // Set a very distant end date if not defined, for easy interval checking
     const end = event.endDate ? parseISO(event.endDate) : new Date(2100, 0, 1);
 
-    // 1. Check if the date is within the habit's overall lifetime
     if (!isWithinInterval(date, { start, end })) return false;
 
-    // 2. Check Frequency Interval (Every X Weeks/Months/Years)
     if (event.repeatFrequency === 'week') {
-        // a. Check if the specific day of week is enabled (e.g., Monday, Tuesday)
-        const dayOfWeek = getDay(date); // 0 = Sunday
+        const dayOfWeek = getDay(date);
         if (!event.repeatDays.includes(dayOfWeek)) return false;
 
-        // b. Check the "Every X Weeks" interval logic
-        // Calculate difference in weeks from the start date
         const weeksDiff = differenceInCalendarWeeks(date, start, { weekStartsOn: 0 });
-        // The week difference must be a multiple of 'repeatEvery' (e.g., 0, 2, 4...)
         if (weeksDiff % event.repeatEvery !== 0) return false;
 
     } else if (event.repeatFrequency === 'month') {
-        // a. Check the "Every X Months" interval logic
         const monthsDiff = differenceInCalendarMonths(date, start);
         if (monthsDiff % event.repeatEvery !== 0) return false;
         
-        // b. Simple monthly logic: Must be the same day of the month as the start date
         if (date.getDate() !== start.getDate()) return false;
 
     } else if (event.repeatFrequency === 'year') {
-        // a. Check the "Every X Years" interval logic
         const yearsDiff = differenceInCalendarYears(date, start);
         if (yearsDiff % event.repeatEvery !== 0) return false;
         
-        // b. Simple yearly logic: Must be the same month and day as the start date
         if (date.getMonth() !== start.getMonth() || date.getDate() !== start.getDate()) return false;
+    }
+    // Handle 'day' frequency used for one-time events
+    if (event.repeatFrequency === 'day' && event.repeatEvery === 1 && event.repeatDays.length === 0) {
+        return isSameDay(date, start);
     }
 
     return true;
@@ -96,12 +87,16 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
     );
 }
 
-export function DayEventBlock({ event, date }: { event: HabitEvent, date: Date }) {
+// 🚨 MODIFIED: Added onEventClick prop and handler
+export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent, date: Date, onEventClick: (eventId: string) => void }) {
     const daysMap = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     const progress = getProgressPercent(event, format(date, 'yyyy-MM-dd'));
 
     return (
-        <div className="relative overflow-hidden rounded-2xl mb-3 border border-gray-100 bg-white">
+        <div 
+            className="relative overflow-hidden rounded-2xl mb-3 border border-gray-100 bg-white shadow-sm cursor-pointer active:scale-[0.99] transition-transform"
+            onClick={() => onEventClick(event.id)} // Click Handler
+        >
             {/* Background Fill Progress (Left to Right) */}
             <div
                 className="absolute top-0 left-0 bottom-0 transition-all duration-500 ease-out z-0 opacity-50"
@@ -114,7 +109,7 @@ export function DayEventBlock({ event, date }: { event: HabitEvent, date: Date }
                         <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-100 text-black">
                             <EventIcon name={event.icon} />
                         </div>
-                        <span className="text-gray-800 text-md">{event.name}</span>
+                        <span className="text-gray-800 text-md font-medium">{event.name}</span>
                     </div>
                     {/* Only show day indicators if it is a WEEKLY habit */}
                     {event.repeatFrequency === 'week' && (
@@ -128,7 +123,7 @@ export function DayEventBlock({ event, date }: { event: HabitEvent, date: Date }
                     )}
                 </div>
                 <div className="flex justify-between items-center mb-4">
-                    <div className="text-sm text-gray-600 font-medium">
+                    <div className="text-sm text-gray-600">
                         Goal: {event.goalAmount} {event.goalUnit}
                     </div>
                     <div className="text-sm text-gray-500">{event.startTime} - {event.endTime}</div>
@@ -143,10 +138,16 @@ export function DayEventBlock({ event, date }: { event: HabitEvent, date: Date }
     );
 }
 
+// 🚨 MODIFIED: Added useNavigate and handleEventClick logic
 export function DayView({ currentDate }: { currentDate: Date }) {
+    const navigate = useNavigate();
+
+    const handleEventClick = (eventId: string) => {
+        navigate(`/edit/${eventId}`);
+    };
+
     const events = useMemo(() => {
         const all = getEvents();
-        // UPDATED: Use the helper function to filter events
         return all.filter(e => doesEventOccurOnDate(e, currentDate))
                   .sort((a, b) => a.startTime.localeCompare(b.startTime));
     }, [currentDate]);
@@ -171,7 +172,14 @@ export function DayView({ currentDate }: { currentDate: Date }) {
                 <div className="flex items-center gap-2 mb-3 pl-1 opacity-40">
                     {icon} <span className="text-xs font-bold uppercase tracking-wider">{title}</span>
                 </div>
-                {items.map(e => <DayEventBlock key={e.id} event={e} date={currentDate} />)}
+                {items.map(e => (
+                    <DayEventBlock 
+                        key={e.id} 
+                        event={e} 
+                        date={currentDate} 
+                        onEventClick={handleEventClick} // Pass the click handler
+                    />
+                ))}
             </div>
         ) : null
     );
@@ -208,13 +216,15 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
     );
 }
 
-export function WeekEventBlock({ event, date }: { event: HabitEvent, date: Date }) {
+// 🚨 MODIFIED: Added onEventClick prop and handler
+export function WeekEventBlock({ event, date, onEventClick }: { event: HabitEvent, date: Date, onEventClick: (eventId: string) => void }) {
     const progress = getProgressPercent(event, format(date, 'yyyy-MM-dd'));
 
     return (
         <div
-            className="w-full h-full rounded-md border border-gray-200 flex items-center justify-center relative overflow-hidden"
+            className="w-full h-full rounded-md border border-gray-200/50 flex items-center justify-center relative overflow-hidden cursor-pointer active:scale-[0.9] transition-transform"
             title={event.name}
+            onClick={() => onEventClick(event.id)} // Click Handler
         >
             {/* Background Fill (Bottom to Top) */}
             <div
@@ -228,16 +238,21 @@ export function WeekEventBlock({ event, date }: { event: HabitEvent, date: Date 
     );
 }
 
+// 🚨 MODIFIED: Added useNavigate and handleEventClick logic
 export function WeekView({ currentDate }: { currentDate: Date }) {
     const start = startOfWeek(currentDate, { weekStartsOn: 0 });
     const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
     const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
 
     const events = useMemo(() => getEvents(), []);
+    const navigate = useNavigate();
+
+    const handleEventClick = (eventId: string) => {
+        navigate(`/edit/${eventId}`);
+    };
 
     const getEventsForCell = (day: Date, hour: number) => {
         return events.filter(e => {
-            // UPDATED: Use the helper function to filter by recurrence logic
             if (!doesEventOccurOnDate(e, day)) return false;
 
             const eventHour = parseInt(e.startTime.split(':')[0], 10);
@@ -268,7 +283,11 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
                                 <div key={d.toString()} className="flex-1 border-l border-gray-50 p-0.5 flex flex-col gap-1">
                                     {cellEvents.map(e => (
                                         <div key={e.id} className="flex-1 min-h-[40px]">
-                                            <WeekEventBlock event={e} date={d} />
+                                            <WeekEventBlock 
+                                                event={e} 
+                                                date={d} 
+                                                onEventClick={handleEventClick} // Pass the click handler
+                                            />
                                         </div>
                                     ))}
                                 </div>
