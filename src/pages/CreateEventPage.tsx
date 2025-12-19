@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Page, Navbar, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
 import { useNavigate } from 'react-router';
 import * as LucideIcons from 'lucide-react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { saveEvent, PALE_COLORS } from '../utils';
 import type { HabitEvent, RepeatFrequency } from '../utils';
 
@@ -11,6 +11,16 @@ const HabitIcons = [
   'Leaf', 'Coffee', 'Heart', 'Feather', 'Briefcase', 'DollarSign',
   'Bed', 'Utensils', 'Meditation', 'Cloud', 'Sparkles', 'Music'
 ] as const;
+
+// Preset units organized by category
+const UNIT_PRESETS = {
+  'Time': ['minutes', 'hours', 'seconds'],
+  'Count': ['times', 'reps', 'sets', 'sessions'],
+  'Reading': ['pages', 'chapters', 'books'],
+  'Hydration': ['glasses', 'cups', 'liters', 'ml', 'oz'],
+  'Distance': ['steps', 'miles', 'km', 'meters'],
+  'Health': ['calories', 'mg', 'servings'],
+};
 
 type RecurrenceEndType = 'never' | 'on_date' | 'none';
 
@@ -22,6 +32,7 @@ export default function CreateEventPage() {
   const [icon, setIcon] = useState('Droplet');
   const [color, setColor] = useState(PALE_COLORS[0]);
   const [isIconSheetOpen, setIsIconSheetOpen] = useState(false);
+  const [isUnitSheetOpen, setIsUnitSheetOpen] = useState(false);
 
   const [goalAmount, setGoalAmount] = useState('5');
   const [goalUnit, setGoalUnit] = useState('cups');
@@ -89,11 +100,9 @@ export default function CreateEventPage() {
 
   return (
     <Page className="bg-white">
-      <Navbar
-        title="Create Habit"
-        left={<button onClick={() => navigate(-1)} className="p-2 text-black"><ArrowLeft size={24} /></button>}
-        transparent
-      />
+      <div className="flex items-center justify-between px-4 py-3 bg-white">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 active:bg-gray-50 transition-all"><ArrowLeft size={24} /></button>
+      </div>
       <div className="px-4 pb-20 pt-4">
         <div className="flex gap-4 justify-center mb-6">
           <button
@@ -124,9 +133,18 @@ export default function CreateEventPage() {
           <List strongIos className="!m-0 rounded-2xl bg-gray-50 border border-gray-100">
             <ListInput label="Goal" type="number" value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} />
           </List>
-          <List strongIos className="!m-0 rounded-2xl bg-gray-50 border border-gray-100">
-            <ListInput label="Unit" type="text" value={goalUnit} onChange={(e) => setGoalUnit(e.target.value)} />
-          </List>
+          <div className="rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden">
+            <button
+              onClick={() => setIsUnitSheetOpen(true)}
+              className="w-full h-full px-4 py-2 text-left flex flex-col justify-center"
+            >
+              <span className="text-xs text-gray-500 mb-0.5">Unit</span>
+              <div className="flex items-center justify-between">
+                <span className="text-base">{goalUnit}</span>
+                <ChevronDown size={18} className="text-gray-400" />
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -215,6 +233,7 @@ export default function CreateEventPage() {
         </div>
       </div>
 
+      {/* Icon Picker Sheet */}
       <Sheet opened={isIconSheetOpen} onBackdropClick={() => setIsIconSheetOpen(false)} className="pb-safe">
         <Block className="!mt-0 pt-4">
           <p className="text-xl font-bold mb-4 text-center">Choose Icon</p>
@@ -229,6 +248,36 @@ export default function CreateEventPage() {
               )
             })}
           </div>
+        </Block>
+      </Sheet>
+
+      {/* Unit Picker Sheet */}
+      <Sheet opened={isUnitSheetOpen} onBackdropClick={() => setIsUnitSheetOpen(false)} className="pb-safe">
+        <Block className="!mt-0 pt-4 max-h-[70vh] overflow-y-auto">
+          <p className="text-xl font-bold mb-4 text-center">Choose Unit</p>
+          {Object.entries(UNIT_PRESETS).map(([category, units]) => (
+            <div key={category} className="mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">{category}</p>
+              <div className="flex flex-wrap gap-2">
+                {units.map((unit) => (
+                  <button
+                    key={unit}
+                    onClick={() => { setGoalUnit(unit); setIsUnitSheetOpen(false); }}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      goalUnit === unit
+                        ? 'bg-black text-white'
+                        : 'bg-gray-100 text-gray-700 active:bg-gray-200'
+                    }`}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <Button large onClick={() => setIsUnitSheetOpen(false)} className="mt-4">
+            Close
+          </Button>
         </Block>
       </Sheet>
     </Page>

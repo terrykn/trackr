@@ -12,8 +12,8 @@ export interface HabitEvent {
     repeatDays: number[]; // 0 = Sunday
     repeatEvery: number;
     repeatFrequency: RepeatFrequency;
-    startDate: string; // ISO
-    endDate?: string;
+    startDate: string; // ISO Date YYYY-MM-DD
+    endDate?: string; // ISO Date YYYY-MM-DD
 }
 
 export interface Completion {
@@ -24,6 +24,9 @@ export interface Completion {
 
 const EVENTS_KEY = 'habit_tracker_events';
 const COMPLETIONS_KEY = 'habit_tracker_completions';
+// 🚨 NEW KEY for storing deleted exceptions
+const DELETED_EXCEPTIONS_KEY = 'habit_deleted_exceptions';
+
 
 export const PALE_COLORS = [
     '#FFD1DC', // Pastel Pink
@@ -36,6 +39,8 @@ export const PALE_COLORS = [
     '#FFD6C9', // Peach
 ];
 
+// --- EVENT CRUD (Modified) ---
+
 export const getEvents = (): HabitEvent[] => {
     try {
         const item = localStorage.getItem(EVENTS_KEY);
@@ -43,9 +48,6 @@ export const getEvents = (): HabitEvent[] => {
     } catch { return []; }
 };
 
-/**
- * Retrieves a single habit event by its ID.
- */
 export const getEventById = (id: string): HabitEvent | undefined => {
     const events = getEvents();
     return events.find(event => event.id === id);
@@ -76,29 +78,117 @@ export const saveEvent = (event: HabitEvent) => {
 };
 
 /**
- * Deletes a habit event by its ID and cleans up associated completions.
+ * Deletes an event and all its associated data (past, present, and future).
  */
-export const deleteEvent = (id: string) => {
+export const deleteEventAll = (id: string) => {
+    // 1. Delete the event itself
     const events = getEvents();
     const newEvents = events.filter(event => event.id !== id);
     localStorage.setItem(EVENTS_KEY, JSON.stringify(newEvents));
 
-    // Clean up completions
+    // 2. Clean up completions
+    let completionsMap: Record<string, number> = {};
     try {
         const item = localStorage.getItem(COMPLETIONS_KEY);
-        const map = item ? JSON.parse(item) : {};
-        const newMap = Object.keys(map).reduce((acc, key) => {
-            // Key format is eventId_date
+        completionsMap = item ? JSON.parse(item) : {};
+        const newCompletionsMap = Object.keys(completionsMap).reduce((acc, key) => {
             if (!key.startsWith(`${id}_`)) {
-                acc[key] = map[key];
+                acc[key] = completionsMap[key];
             }
             return acc;
         }, {} as Record<string, number>);
-        localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(newMap));
+        localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(newCompletionsMap));
     } catch (error) {
         console.error("Error cleaning up completions:", error);
     }
+
+    // 3. Clean up exceptions
+    try {
+        const exceptionsItem = localStorage.getItem(DELETED_EXCEPTIONS_KEY);
+        let exceptions: Record<string, string[]> = exceptionsItem ? JSON.parse(exceptionsItem) : {};
+        delete exceptions[id];
+        localStorage.setItem(DELETED_EXCEPTIONS_KEY, JSON.stringify(exceptions));
+    } catch (error) {
+        console.error("Error cleaning up exceptions:", error);
+    }
 };
+
+// --- EXCEPTION HANDLING (New) ---
+
+const getDeletedExceptions = (): Record<string, string[]> => {
+    try {
+        const item = localStorage.getItem(DELETED_EXCEPTIONS_KEY);
+        return item ? JSON.parse(item) : {};
+    } catch { return {}; }
+};
+
+const saveDeletedExceptions = (exceptions: Record<string, string[]>) => {
+    localStorage.setItem(DELETED_EXCEPTIONS_KEY, JSON.stringify(exceptions));
+};
+
+/**
+ * Checks if a specific date for an event has been deleted.
+ */
+export const isDateDeleted = (eventId: string, date: string): boolean => {
+    const exceptions = getDeletedExceptions();
+    return !!exceptions[eventId]?.includes(date);
+};
+
+/**
+ * Deletes a single instance of a recurring event (single day exception).
+ */
+export const deleteEventInstance = (eventId: string, date: string) => {
+    const exceptions = getDeletedExceptions();
+
+    // Ensure the array exists for this event
+    if (!exceptions[eventId]) {
+        exceptions[eventId] = [];
+    }
+
+    // Add the specific date to the list of deleted instances
+    if (!exceptions[eventId].includes(date)) {
+        exceptions[eventId].push(date);
+    }
+
+    saveDeletedExceptions(exceptions);
+};
+
+/**
+ * Deletes an event instance and all following recurring events by updating the HabitEvent's endDate.
+ */
+export const deleteEventFuture = (eventId: string, date: string) => {
+    const events = getEvents();
+    const eventIndex = events.findIndex(e => e.id === eventId);
+
+    if (eventIndex !== -1) {
+        const event = events[eventIndex];
+        const newEndDate = new Date(date);
+
+        // Find the day immediately *before* the deletion date
+        newEndDate.setDate(newEndDate.getDate() - 1);
+
+        // Format the new end date to ISO
+        const newEndDateISO = newEndDate.toISOString().split('T')[0];
+
+        // The new end date must be after the start date
+        if (newEndDateISO >= event.startDate.split('T')[0]) {
+            // Create an updated event with the new end date
+            const updatedEvent: HabitEvent = {
+                ...event,
+                endDate: newEndDate.toISOString(),
+            };
+
+            // Re-save the event
+            saveEvent(updatedEvent);
+        } else {
+            // If the new end date is before the start date, it means all events are deleted.
+            deleteEventAll(eventId);
+        }
+    }
+};
+
+
+// --- COMPLETION GETTERS (No changes needed, but included for completeness) ---
 
 export const getCompletion = (eventId: string, date: string): number => {
     try {
@@ -108,8 +198,18 @@ export const getCompletion = (eventId: string, date: string): number => {
     } catch { return 0; }
 };
 
-export const getProgressPercent = (event: HabitEvent, date: string): number => {
-    const current = getCompletion(event.id, date);
-    if (!event.goalAmount) return 0;
-    return Math.min(100, Math.max(0, (current / event.goalAmount) * 100));
-};
+export function getEventProgress(eventId: string, dateISO: string): number {
+    const key = `progress_${eventId}_${dateISO}`;
+    const stored = localStorage.getItem(key);
+    return stored ? parseInt(stored, 10) : 0;
+}
+
+export function updateEventProgress(eventId: string, dateISO: string, progress: number): void {
+    const key = `progress_${eventId}_${dateISO}`;
+    localStorage.setItem(key, progress.toString());
+}
+
+export function getProgressPercent(event: HabitEvent, dateISO: string): number {
+    const progress = getEventProgress(event.id, dateISO);
+    return Math.min(100, (progress / event.goalAmount) * 100);
+}
