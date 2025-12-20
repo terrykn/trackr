@@ -205,7 +205,7 @@ export default function Timer() {
             {/* Fixed Mode Toggle at Top */}
             <div className="absolute top-8 left-0 right-0 z-10 px-6">
                 <div className="flex justify-center">
-                    <div className="bg-white rounded-full p-1 flex gap-1">
+                    <div className=" rounded-full p-1 flex gap-1">
                         <button
                             onClick={() => setMode('focus')}
                             className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
@@ -237,7 +237,7 @@ export default function Timer() {
                     <div className="mb-8">
                         <button
                             onClick={() => setShowTaskPicker(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm font-medium text-gray-700 active:scale-95 transition-transform"
+                            className="flex items-center gap-2 px-4 py-2  rounded-full text-sm font-medium text-gray-700 active:scale-95 transition-transform"
                         >
                             {selectedTask ? (
                                 <>
@@ -282,8 +282,8 @@ export default function Timer() {
                                     timerState === 'idle'
                                         ? activePreset === minutes
                                             ? 'bg-black text-white'
-                                            : 'bg-white text-gray-700 active:scale-95'
-                                        : 'bg-white text-gray-400'
+                                            : ' text-gray-700 active:scale-95'
+                                        : ' text-gray-400'
                                 }`}
                                 disabled={timerState !== 'idle'}
                             >
@@ -349,7 +349,7 @@ export default function Timer() {
             {/* Task Picker Modal */}
             {showTaskPicker && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
-                    <div className="bg-white rounded-3xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                    <div className=" rounded-3xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
                         <div className="p-6 pb-0">
                             <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
                             <h3 className="text-lg font-semibold mb-4">Select Task</h3>
@@ -399,7 +399,7 @@ export default function Timer() {
             {/* Time Picker Modal */}
             {showTimePicker && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
-                    <div className="bg-white rounded-3xl w-full max-w-md p-6">
+                    <div className=" rounded-3xl w-full max-w-md p-6">
                         <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
                         <h3 className="text-lg font-semibold mb-6 text-center">Set Timer</h3>
 
@@ -466,7 +466,7 @@ export default function Timer() {
             {/* Finish Session Modal */}
             {showFinishModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6">
+                    <div className=" rounded-3xl w-full max-w-sm p-6">
                         <h3 className="text-xl font-semibold mb-2 text-center">Session Complete!</h3>
                         <p className="text-gray-600 text-center mb-6">
                             You focused for <span className="font-semibold text-black">{formatElapsedTime(elapsedTime)}</span>

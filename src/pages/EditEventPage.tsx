@@ -202,7 +202,7 @@ export default function EditEventPage() {
     if (isLoaded && !habitFound) {
         return (
             <Page>
-                <div className="flex items-center justify-between px-4 py-3 bg-white">
+                <div className="flex items-center justify-between px-4 py-3 ">
                     <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 active:bg-gray-50 transition-all"><ArrowLeft size={24} /></button>
                 </div>
                 <Block>Habit not found.</Block>
@@ -211,8 +211,8 @@ export default function EditEventPage() {
     }
 
     return (
-        <Page className="bg-white">
-            <div className="flex items-center justify-between px-4 py-3 bg-white">
+        <Page className="">
+            <div className="flex items-center justify-between px-4 py-3 ">
                 <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 active:bg-gray-50 transition-all"><ArrowLeft size={24} /></button>
                 <button onClick={() => setIsDeleteSheetOpen(true)} className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-red-500 active:scale-95 active:bg-gray-50 transition-all"><Trash2 size={24} /></button>
             </div>
@@ -222,7 +222,7 @@ export default function EditEventPage() {
                 <div className="flex gap-4 justify-center mb-6">
                     <button
                         onClick={() => setIsIconSheetOpen(true)}
-                        className="w-20 h-20 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center hover:bg-gray-100"
+                        className="w-20 h-20 bg-gray-50 rounded-2xl border border-theme flex items-center justify-center"
                         style={{ backgroundColor: color }}
                     >
                         <EventIcon name={icon} size={32} />

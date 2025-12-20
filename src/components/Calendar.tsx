@@ -9,6 +9,7 @@ import {
 } from 'date-fns';
 import { getEvents, getProgressPercent, isDateDeleted, updateEventProgress, getEventProgress } from '../utils';
 import type { HabitEvent } from '../utils';
+import { Button } from 'konsta/react';
 
 const EventIcon = ({ name, size = 18 }: { name: string, size?: number }) => {
     const Icon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType;
@@ -80,19 +81,35 @@ const calculateEventGeometry = (event: HabitEvent, currentHour: number) => {
 
 // Helper to darken color
 const darkenColor = (color: string, amount: number = 0.3): string => {
-    // Convert hex to RGB
     const hex = color.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
 
-    // Darken
     const newR = Math.floor(r * (1 - amount));
     const newG = Math.floor(g * (1 - amount));
     const newB = Math.floor(b * (1 - amount));
 
-    // Convert back to hex
     return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+};
+
+const lightenColor = (color: string, amount: number = 0.3): string => {
+    let hex = color.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    const newR = Math.min(255, Math.floor(r + (255 - r) * amount));
+    const newG = Math.min(255, Math.floor(g + (255 - g) * amount));
+    const newB = Math.min(255, Math.floor(b + (255 - b) * amount));
+
+    const toHex = (val: number) => val.toString(16).padStart(2, '0');
+    
+    return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 };
 
 export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date, onDateChange: (d: Date) => void }) {
@@ -100,17 +117,25 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
     return (
-        <div className="bg-white pb-2 pt-2 px-3 border-b border-gray-100">
+        <div className="pb-2 px-4 theme-bg-base border-b theme-border">
             <div className="flex items-center justify-between mb-2">
-                <button onClick={() => onDateChange(subDays(currentDate, 7))} className="p-1.5 text-gray-400 hover:text-black active:scale-95 transition-transform">
+                <Button 
+                    clear
+                    onClick={() => onDateChange(subDays(currentDate, 7))} 
+                    className="w-10 h-10 rounded-2xl theme-text-gray"
+                >
                     <ChevronLeft size={20} />
-                </button>
-                <span className="text-lg font-semibold tracking-wide text-gray-800">
+                </Button>
+                <span className="text-lg font-semibold tracking-wide theme-text-base">
                     {format(currentDate, 'MMMM yyyy')}
                 </span>
-                <button onClick={() => onDateChange(addDays(currentDate, 7))} className="p-1.5 text-gray-400 hover:text-black active:scale-95 transition-transform">
+                <Button 
+                    clear
+                    onClick={() => onDateChange(addDays(currentDate, 7))} 
+                    className="w-10 h-10 rounded-2xl theme-text-gray"
+                >
                     <ChevronRight size={20} />
-                </button>
+                </Button>
             </div>
             <div className="flex justify-between items-center gap-1">
                 {weekDays.map((date) => {
@@ -120,15 +145,15 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
                         <button
                             key={date.toString()}
                             onClick={() => onDateChange(date)}
-                            className={`flex flex-col items-center justify-center w-11 h-14 rounded-2xl transition-all active:scale-95 border
+                            className={`flex flex-col items-center justify-center w-11 h-14 rounded-2xl transition-all active:scale-95
                                 ${isSelected
-                                    ? 'bg-black text-white border-black'
+                                    ? 'theme-bg-primary theme-border theme-text-gray border'
                                     : isToday
-                                        ? 'bg-gray-100 text-gray-800 border-gray-200'
-                                        : 'bg-transparent text-gray-600 hover:bg-gray-50 border-transparent'
+                                        ? 'theme-bg-secondary theme-border theme-text-gray'
+                                        : 'border-transparent theme-text-gray hover:theme-bg-card'
                                 }`}
                         >
-                            <span className={`text-[9px] font-semibold uppercase mb-0.5 ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>
+                            <span className="text-[9px] font-semibold uppercase mb-0.5">
                                 {format(date, 'EEE')}
                             </span>
                             <span className="text-lg font-bold">{format(date, 'd')}</span>
@@ -205,12 +230,12 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
         onEventClick(event.id);
     };
 
-    const darkerColor = darkenColor(event.color, 0.25);
+    const isCompleted = currentProgress >= event.goalAmount;
 
     return (
         <div
             ref={containerRef}
-            className={`relative overflow-hidden rounded-3xl mb-3 bg-white cursor-pointer transition-all border border-gray-200
+            className={`relative overflow-hidden rounded-2xl mb-3 cursor-pointer transition-all border theme-border theme-bg-card
                 ${isDragging ? 'scale-[1.02]' : 'active:scale-[0.98]'}
             `}
             onClick={handleClick}
@@ -228,7 +253,7 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                 style={{
                     width: `${Math.min(100, progressPercent)}%`,
                     backgroundColor: event.color,
-                    opacity: 0.3,
+                    opacity: 0.7,
                     transitionDuration: isDragging ? '50ms' : '300ms'
                 }}
             />
@@ -238,20 +263,19 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                 <div className="flex justify-between items-start mb-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white border border-black/5 flex-shrink-0"
-                            style={{ backgroundColor: darkerColor }}
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center theme-bg-card theme-text-gray border theme-border flex-shrink-0"
                         >
                             <EventIcon name={event.icon} size={20} />
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
                             <div className="flex flex-row items-center justify-between w-full gap-3">
-                                <span className="text-gray-900 text-base font-semibold mb-0.5 truncate">{event.name}</span>
+                                <span className="theme-text-base text-base font-semibold mb-0.5 truncate">{event.name}</span>
                                 {event.repeatFrequency === 'week' && (
                                     <div className="flex gap-1.5 flex-shrink-0">
                                         {daysMap.map((day, index) => (
                                             <span
                                                 key={index}
-                                                className={`text-xs font-bold ${event.repeatDays.includes(index) ? 'text-gray-800' : 'text-gray-300'}`}
+                                                className={`text-xs font-bold ${event.repeatDays.includes(index) ? 'theme-text-gray' : 'theme-text-muted opacity-40'}`}
                                             >
                                                 {day}
                                             </span>
@@ -260,9 +284,9 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                                 )}
                             </div>
                             <div className="flex flex-row items-center justify-between w-full gap-3">
-                                <span className="text-xs text-gray-400 flex-shrink-0">{event.startTime} - {event.endTime}</span>
+                                <span className="text-xs theme-text-muted flex-shrink-0">{event.startTime} - {event.endTime}</span>
                                 {event.repeatFrequency === 'week' && (
-                                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide flex-shrink-0">
+                                    <span className="text-[10px] font-semibold theme-text-muted uppercase tracking-wide flex-shrink-0">
                                         Every {event.repeatEvery} {event.repeatFrequency}
                                     </span>
                                 )}
@@ -273,16 +297,18 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
 
                 {/* Goal section */}
                 <div className="progress-area flex items-center justify-between">
-                    <span className="text-sm text-gray-500">
-                        Goal: <span className="font-semibold text-gray-800">{currentProgress}/{event.goalAmount} {event.goalUnit}</span>
+                    <span className="text-sm theme-text-muted">
+                        Goal: <span className="font-semibold theme-text-base">{currentProgress}/{event.goalAmount} {event.goalUnit}</span>
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                         <div
-                            className="w-2 h-2 rounded-full border border-gray-200"
-                            style={{ backgroundColor: currentProgress >= event.goalAmount ? '#22c55e' : event.color }}
+                            className={`w-2.5 h-2.5 rounded-full border theme-border`}
+                            style={{ backgroundColor: isCompleted ? '#76f7a5ff' : event.color }}
                         />
-                        <span className="text-[10px] font-medium" style={{ color: currentProgress >= event.goalAmount ? '#22c55e' : '#9ca3af' }}>
-                            {currentProgress >= event.goalAmount ? 'Completed' : `${Math.round(progressPercent)}%`}
+                        <span 
+                            className={`text-[10px] font-medium ${isCompleted ? 'theme-text-base' : 'theme-text-muted'}`}
+                        >
+                            {isCompleted ? 'Completed' : `${Math.round(progressPercent)}%`}
                         </span>
                     </div>
                 </div>
@@ -327,8 +353,8 @@ export function DayView({ currentDate }: { currentDate: Date }) {
         items.length > 0 ? (
             <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3 pl-1">
-                    <span className="text-gray-400">{icon}</span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">{title}</span>
+                    <span className="theme-text-gray">{icon}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider theme-text-gray">{title}</span>
                 </div>
                 {items.map(e => (
                     <DayEventBlock
@@ -343,13 +369,13 @@ export function DayView({ currentDate }: { currentDate: Date }) {
     );
 
     return (
-        <div className="px-4 py-4 h-full overflow-y-auto pb-24 bg-gray-50/50">
+        <div className="px-4 py-4 h-full overflow-y-auto pb-24 theme-bg-base">
             {events.length === 0 ? (
-                <div className="flex flex-col items-center justify-center mt-20">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 border border-gray-200">
-                        <Sun size={24} className="text-gray-300" />
+                <div className="flex flex-col items-center justify-center h-full">
+                    <div className="mb-4">
+                        <Sun size={28} strokeWidth={1.5} className="theme-text-gray" />
                     </div>
-                    <span className="text-gray-400 text-sm">No habits scheduled for today</span>
+                    <span className="theme-text-gray text-md mb-6">No habits scheduled for today</span>
                 </div>
             ) : (
                 <>
@@ -363,251 +389,245 @@ export function DayView({ currentDate }: { currentDate: Date }) {
 }
 
 export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Date, onDateChange: (d: Date) => void }) {
-    const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-    const end = addDays(start, 6);
+   const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+   const end = addDays(start, 6);
 
-    return (
-        <div className="bg-white pb-4 pt-2 px-4 border-b border-gray-100 flex items-center justify-between">
-            <button onClick={() => onDateChange(subDays(currentDate, 7))} className="p-2 text-gray-400 hover:text-black active:scale-95 transition-transform">
-                <ChevronLeft size={20} />
-            </button>
-            <span className="text-sm font-semibold text-gray-800">
-                {format(start, 'MMM d')} - {format(end, 'MMM d, yyyy')}
-            </span>
-            <button onClick={() => onDateChange(addDays(currentDate, 7))} className="p-2 text-gray-400 hover:text-black active:scale-95 transition-transform">
-                <ChevronRight size={20} />
-            </button>
-        </div>
-    );
+   return (
+       <div className="pb-4 px-4 theme-border flex items-center justify-between theme-bg-base">
+           <Button 
+                clear
+               onClick={() => onDateChange(subDays(currentDate, 7))} 
+               className="w-10 h-10 rounded-2xl theme-text-gray"
+           >
+               <ChevronLeft size={20} />
+           </Button>
+           <span className="text-md font-semibold theme-text-base">
+               {format(start, 'MMM d')} - {format(end, 'MMM d, yyyy')}
+           </span>
+           <Button 
+                clear
+               onClick={() => onDateChange(addDays(currentDate, 7))} 
+               className="w-10 h-10 rounded-2xl theme-bg-card theme-text-gray"
+           >
+               <ChevronRight size={20} />
+           </Button>
+       </div>
+   );
 }
 
 export function WeekEventBlock({ event, date, onEventClick, style }: {
-    event: HabitEvent,
-    date: Date,
-    onEventClick: (eventId: string, date: Date) => void,
-    style: React.CSSProperties,
+  event: HabitEvent,
+  date: Date,
+  onEventClick: (eventId: string, date: Date) => void,
+  style: React.CSSProperties,
 }) {
-    const dateISO = format(date, 'yyyy-MM-dd');
-    const progress = getProgressPercent(event, dateISO);
+  const dateISO = format(date, 'yyyy-MM-dd');
+  const progress = getProgressPercent(event, dateISO);
 
-    // Calculate if compact based on width
-    const isCompact = style.width && parseFloat(style.width as string) < 50;
+  const isCompact = style.width && parseFloat(style.width as string) < 50;
 
-    return (
-        <div
-            className="absolute overflow-hidden cursor-pointer active:scale-[0.98] transition-transform rounded-md border border-gray-200"
-            title={`${event.name} (${event.startTime} - ${event.endTime})`}
-            onClick={(e) => {
-                e.stopPropagation();
-                onEventClick(event.id, date);
-            }}
-            style={{ 
-                ...style, 
-                backgroundColor: event.color, 
-                opacity: 0.9, 
-                borderColor: `${event.color}40` 
-            }}
-        >
-            {/* Icon */}
-            <div className={`absolute ${isCompact ? 'top-1 left-1/2 -translate-x-1/2' : 'top-0.5 right-0.5'} z-10`}>
-                <EventIcon name={event.icon} size={isCompact ? 12 : 10} />
-            </div>
-            
-            {/* Event name */}
-            {!isCompact && (
-                <div className="pt-3 px-1 pb-1 relative z-10">
-                    <span className="text-[10px] font-semibold leading-tight break-words line-clamp-3">
-                        {event.name}
-                    </span>
-                </div>
-            )}
-            
-            {/* Progress fill from bottom */}
-            <div
-                className="absolute bottom-0 left-0 right-0 transition-all duration-500 ease-out"
-                style={{ 
-                    height: `${progress}%`, 
-                    backgroundColor: '#000000', 
-                    opacity: 0.2 
-                }}
-            />
-        </div>
-    );
+  return (
+      <div
+          className="absolute overflow-hidden cursor-pointer active:scale-[0.98] transition-transform rounded-lg border"
+          title={`${event.name} (${event.startTime} - ${event.endTime})`}
+          onClick={(e) => {
+              e.stopPropagation();
+              onEventClick(event.id, date);
+          }}
+          style={{ 
+              ...style,
+              borderColor: darkenColor(event.color, 0.15),
+              background: lightenColor(event.color, 0.9),
+          }}
+      >
+          {/* Icon */}
+          <div className={`absolute ${isCompact ? 'top-1 left-1/2 -translate-x-1/2' : 'top-0.5 right-0.5'} z-10 theme-text-gray`}>
+              <EventIcon name={event.icon} size={isCompact ? 12 : 10} />
+          </div>
+          
+          {/* Event name */}
+          {!isCompact && (
+              <div className="pt-3 px-1 pb-1 relative z-10">
+                  <span className="text-[10px] font-semibold leading-tight break-words line-clamp-3 theme-text-gray">
+                      {event.name}
+                  </span>
+              </div>
+          )}
+          
+          {/* Progress fill from bottom */}
+          <div
+              className="absolute bottom-0 left-0 right-0 transition-all duration-500 ease-out"
+              style={{ 
+                  height: `${progress}%`, 
+                  backgroundColor: event.color,
+              }}
+          />
+      </div>
+  );
 }
 
 export function WeekView({ currentDate }: { currentDate: Date }) {
-    const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-    const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-    const hours = Array.from({ length: 18 }, (_, i) => i + 6);
+   const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+   const hours = Array.from({ length: 24 }, (_, i) => i); // All 24 hours
 
-    const events = useMemo(() => getEvents(), []);
-    const navigate = useNavigate();
+   const events = useMemo(() => getEvents(), []);
+   const navigate = useNavigate();
 
-    const handleEventClick = (eventId: string, clickedDate: Date) => {
-        const dateISO = format(clickedDate, 'yyyy-MM-dd');
-        navigate(`/edit/${eventId}?date=${dateISO}`);
-    };
+   const handleEventClick = (eventId: string, clickedDate: Date) => {
+       const dateISO = format(clickedDate, 'yyyy-MM-dd');
+       navigate(`/edit/${eventId}?date=${dateISO}`);
+   };
 
-    const getEventsForDay = (day: Date) => {
-        const dayISO = format(day, 'yyyy-MM-dd');
+   const getEventsForDay = (day: Date) => {
+       const dayISO = format(day, 'yyyy-MM-dd');
 
-        return events.filter(e => {
-            if (!doesEventOccurOnDate(e, day)) return false;
-            if (isDateDeleted(e.id, dayISO)) return false;
-            return true;
-        });
-    };
+       return events.filter(e => {
+           if (!doesEventOccurOnDate(e, day)) return false;
+           if (isDateDeleted(e.id, dayISO)) return false;
+           return true;
+       });
+   };
 
-    const calculateEventPositions = (dayEvents: HabitEvent[]) => {
-        const positions: Map<string, { column: number, totalColumns: number }> = new Map();
+   const calculateEventPositions = (dayEvents: HabitEvent[]) => {
+       const positions: Map<string, { column: number, totalColumns: number }> = new Map();
 
-        const sortedEvents = [...dayEvents].sort((a, b) => {
-            const aStart = a.startTime.split(':').map(Number);
-            const bStart = b.startTime.split(':').map(Number);
-            return (aStart[0] * 60 + aStart[1]) - (bStart[0] * 60 + bStart[1]);
-        });
+       const sortedEvents = [...dayEvents].sort((a, b) => {
+           const aStart = a.startTime.split(':').map(Number);
+           const bStart = b.startTime.split(':').map(Number);
+           return (aStart[0] * 60 + aStart[1]) - (bStart[0] * 60 + bStart[1]);
+       });
 
-        const columns: { endTime: number, eventId: string }[] = [];
+       const columns: { endTime: number, eventId: string }[] = [];
 
-        sortedEvents.forEach(event => {
-            const [startH, startM] = event.startTime.split(':').map(Number);
-            const [endH, endM] = event.endTime.split(':').map(Number);
-            const eventStart = startH * 60 + startM;
-            const eventEnd = endH * 60 + endM;
+       sortedEvents.forEach(event => {
+           const [startH, startM] = event.startTime.split(':').map(Number);
+           const [endH, endM] = event.endTime.split(':').map(Number);
+           const eventStart = startH * 60 + startM;
+           const eventEnd = endH * 60 + endM;
 
-            let columnIndex = columns.findIndex(col => col.endTime <= eventStart);
+           let columnIndex = columns.findIndex(col => col.endTime <= eventStart);
 
-            if (columnIndex === -1) {
-                columnIndex = columns.length;
-                columns.push({ endTime: eventEnd, eventId: event.id });
-            } else {
-                columns[columnIndex] = { endTime: eventEnd, eventId: event.id };
-            }
+           if (columnIndex === -1) {
+               columnIndex = columns.length;
+               columns.push({ endTime: eventEnd, eventId: event.id });
+           } else {
+               columns[columnIndex] = { endTime: eventEnd, eventId: event.id };
+           }
 
-            positions.set(event.id, { column: columnIndex, totalColumns: 0 });
-        });
+           positions.set(event.id, { column: columnIndex, totalColumns: 0 });
+       });
 
-        sortedEvents.forEach(event => {
-            const [startH, startM] = event.startTime.split(':').map(Number);
-            const [endH, endM] = event.endTime.split(':').map(Number);
-            const eventStart = startH * 60 + startM;
-            const eventEnd = endH * 60 + endM;
+       sortedEvents.forEach(event => {
+           const [startH, startM] = event.startTime.split(':').map(Number);
+           const [endH, endM] = event.endTime.split(':').map(Number);
+           const eventStart = startH * 60 + startM;
+           const eventEnd = endH * 60 + endM;
 
-            const overlappingEvents = sortedEvents.filter(other => {
-                const [otherStartH, otherStartM] = other.startTime.split(':').map(Number);
-                const [otherEndH, otherEndM] = other.endTime.split(':').map(Number);
-                const otherStart = otherStartH * 60 + otherStartM;
-                const otherEnd = otherEndH * 60 + otherEndM;
+           const overlappingEvents = sortedEvents.filter(other => {
+               const [otherStartH, otherStartM] = other.startTime.split(':').map(Number);
+               const [otherEndH, otherEndM] = other.endTime.split(':').map(Number);
+               const otherStart = otherStartH * 60 + otherStartM;
+               const otherEnd = otherEndH * 60 + otherEndM;
 
-                return eventStart < otherEnd && eventEnd > otherStart;
-            });
+               return eventStart < otherEnd && eventEnd > otherStart;
+           });
 
-            const maxColumn = Math.max(...overlappingEvents.map(e => positions.get(e.id)!.column));
-            overlappingEvents.forEach(e => {
-                const pos = positions.get(e.id)!;
-                pos.totalColumns = Math.max(pos.totalColumns, maxColumn + 1);
-            });
-        });
+           const maxColumn = Math.max(...overlappingEvents.map(e => positions.get(e.id)!.column));
+           overlappingEvents.forEach(e => {
+               const pos = positions.get(e.id)!;
+               pos.totalColumns = Math.max(pos.totalColumns, maxColumn + 1);
+           });
+       });
 
-        return positions;
-    };
+       return positions;
+   };
 
-    // Calculate full event geometry (not per-slot)
-    const calculateFullEventGeometry = (event: HabitEvent, firstHour: number) => {
-        const [startH, startM] = event.startTime.split(':').map(Number);
-        const [endH, endM] = event.endTime.split(':').map(Number);
+   const calculateFullEventGeometry = (event: HabitEvent, firstHour: number) => {
+       const [startH, startM] = event.startTime.split(':').map(Number);
+       const [endH, endM] = event.endTime.split(':').map(Number);
 
-        const totalStartMinutes = startH * 60 + startM;
-        const totalEndMinutes = endH * 60 + endM;
-        const durationMinutes = totalEndMinutes - totalStartMinutes;
+       const totalStartMinutes = startH * 60 + startM;
+       const totalEndMinutes = endH * 60 + endM;
+       const durationMinutes = totalEndMinutes - totalStartMinutes;
 
-        // Calculate top offset from the first hour row
-        const firstHourStart = firstHour * 60;
-        const topOffsetMinutes = totalStartMinutes - firstHourStart;
+       const firstHourStart = firstHour * 60;
+       const topOffsetMinutes = totalStartMinutes - firstHourStart;
 
-        const top = `${(topOffsetMinutes / 60) * 60}px`;
-        const height = `${(durationMinutes / 60) * 60}px`;
+       const top = `${(topOffsetMinutes / 60) * 60 + 8}px`; // Added 8px offset for top padding
+       const height = `${(durationMinutes / 60) * 60}px`;
 
-        return { top, height };
-    };
+       return { top, height };
+   };
 
-    // Get the hour when the event starts (for positioning in the grid)
-    const getEventStartHour = (event: HabitEvent) => {
-        return parseInt(event.startTime.split(':')[0], 10);
-    };
+   return (
+       <div className="h-full overflow-y-auto pb-16.5 theme-bg-base">
+           {/* Header */}
+           <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] sticky top-0 z-40 theme-bg-base theme-border">
+               <div className="flex-shrink-0" />
+               {days.map(d => {
+                   const isToday = isSameDay(d, new Date());
+                   return (
+                       <div key={d.toString()} className="text-center py-2 min-w-0">
+                           <div className="text-[10px] theme-text-muted font-bold uppercase">{format(d, 'EEEEE')}</div>
+                           <div className={`text-sm font-bold ${isToday ? 'theme-text-accent' : 'theme-text-base'}`}>
+                               {format(d, 'd')}
+                           </div>
+                       </div>
+                   );
+               })}
+           </div>
 
-    return (
-        <div className="h-full overflow-y-auto bg-white pb-24">
-            {/* Header */}
-            <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] sticky top-0 z-40 bg-white border-b border-gray-100">
-                <div className="flex-shrink-0" />
-                {days.map(d => (
-                    <div key={d.toString()} className="text-center py-2 border-l border-gray-50 min-w-0">
-                        <div className="text-[10px] text-gray-400 font-bold uppercase">{format(d, 'EEEEE')}</div>
-                        <div className={`text-sm font-bold ${isSameDay(d, new Date()) ? 'text-blue-500' : 'text-gray-800'}`}>{format(d, 'd')}</div>
-                    </div>
-                ))}
-            </div>
+           {/* Time grid with events overlay */}
+           <div className="relative pt-2">
+               {/* Hour rows */}
+               {hours.map(hour => (
+                   <div key={hour} className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] h-[60px] relative">
+                       <div className="text-[10px] theme-text-muted text-right pr-2 flex items-start justify-end">
+                           <span className="-translate-y-1/2">{hour}:00</span>
+                       </div>
+                       {days.map(d => (
+                           <div key={d.toString()} className="border-l border-t relative min-w-0 theme-border-mute" />
+                       ))}
+                   </div>
+               ))}
 
-            {/* Time grid with events overlay */}
-            <div className="relative">
-                {/* Hour rows */}
-                {hours.map(hour => (
-                    <div key={hour} className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] h-[60px] border-b border-gray-50">
-                        <div className="text-[10px] text-gray-400 text-right pr-2 pt-1 -mt-2 relative z-10">
-                            {hour}:00
-                        </div>
-                        {days.map(d => (
-                            <div key={d.toString()} className="border-l border-gray-50 relative min-w-0" />
-                        ))}
-                    </div>
-                ))}
+               {/* Events overlay */}
+               <div className="absolute top-2 left-[3rem] right-0 bottom-0 pointer-events-none">
+                   <div className="grid grid-cols-7 h-full">
+                       {days.map(d => {
+                           const dayEvents = getEventsForDay(d);
+                           const positions = calculateEventPositions(dayEvents);
 
-                {/* Events overlay - positioned absolutely over the grid */}
-                <div className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none">
-                    <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] h-full">
-                        <div className="flex-shrink-0" />
-                        {days.map(d => {
-                            const dayISO = format(d, 'yyyy-MM-dd');
-                            const dayEvents = getEventsForDay(d);
-                            const positions = calculateEventPositions(dayEvents);
+                           return (
+                               <div key={d.toString()} className="relative min-w-0 pointer-events-auto">
+                                   {dayEvents.map(event => {
+                                       const geometry = calculateFullEventGeometry(event, hours[0]);
+                                       const pos = positions.get(event.id)!;
+                                       const width = `calc(${100 / pos.totalColumns}% - 2px)`;
+                                       const left = `calc(${(pos.column / pos.totalColumns) * 100}% + 1px)`;
 
-                            return (
-                                <div key={d.toString()} className="relative min-w-0 pointer-events-auto">
-                                    {dayEvents.map(event => {
-                                        const startHour = getEventStartHour(event);
-                                        
-                                        // Only render if event starts within our visible hours
-                                        if (startHour < hours[0] || startHour > hours[hours.length - 1]) {
-                                            return null;
-                                        }
-
-                                        const geometry = calculateFullEventGeometry(event, hours[0]);
-                                        const pos = positions.get(event.id)!;
-                                        const width = `calc(${100 / pos.totalColumns}% - 2px)`;
-                                        const left = `calc(${(pos.column / pos.totalColumns) * 100}% + 1px)`;
-
-                                        return (
-                                            <WeekEventBlock
-                                                key={event.id}
-                                                event={event}
-                                                date={d}
-                                                onEventClick={handleEventClick}
-                                                style={{
-                                                    top: geometry.top,
-                                                    height: geometry.height,
-                                                    width,
-                                                    left,
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+                                       return (
+                                           <WeekEventBlock
+                                               key={event.id}
+                                               event={event}
+                                               date={d}
+                                               onEventClick={handleEventClick}
+                                               style={{
+                                                   top: geometry.top,
+                                                   height: geometry.height,
+                                                   width,
+                                                   left,
+                                               }}
+                                           />
+                                       );
+                                   })}
+                               </div>
+                           );
+                       })}
+                   </div>
+               </div>
+           </div>
+       </div>
+   );
 }

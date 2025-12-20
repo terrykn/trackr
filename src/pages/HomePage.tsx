@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Page } from "konsta/react";
+import { Button, Page } from "konsta/react";
 import { WeekView, WeekViewHeader, DayView, DayViewHeader } from '../components/Calendar';
 import BottomNav from '../components/BottomNav';
 import { Calendar1, CalendarDays, Plus } from 'lucide-react';
@@ -23,24 +23,26 @@ export default function HomePage() {
     }, [viewMode]);
 
     return (
-        <Page className="flex flex-col h-screen bg-white">
+        <Page className="flex flex-col h-screen theme-bg-base">
             {/* Custom flat header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white">
-                <button
+            <div className="flex items-center justify-between px-4 py-3 theme-bg-base">
+                <Button
+                    clear
+                    className="w-10 h-10 rounded-2xl theme-text-gray border theme-border theme-bg-card"
                     onClick={toggleViewMode}
-                    className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 active:bg-gray-50 transition-all"
                 >
                     {ViewModeIcon}
-                </button>
-                <button
+                </Button>
+                <Button
+                    clear
                     onClick={() => navigate('/create')}
-                    className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 active:bg-gray-50 transition-all"
+                    className="w-10 h-10 rounded-2xl theme-text-gray border theme-border theme-bg-card"
                 >
                     <Plus size={20} strokeWidth={1.5} />
-                </button>
+                </Button>
             </div>
 
-            <div className="flex-none z-10 bg-white">
+            <div className="flex-none z-10 theme-bg-base">
                 {viewMode === 'day' ? (
                     <DayViewHeader currentDate={currentDate} onDateChange={setCurrentDate} />
                 ) : (
@@ -49,7 +51,7 @@ export default function HomePage() {
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-hidden relative bg-white">
+            <div className="flex-1 overflow-hidden relative theme-bg-base">
                 {viewMode === 'day' ? (
                     <DayView currentDate={currentDate} />
                 ) : (

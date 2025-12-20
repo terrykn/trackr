@@ -12,7 +12,7 @@ export default function BottomNav() {
     ]
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-50">
+        <nav className="fixed bottom-0 left-0 right-0 theme-bg-base border-t theme-border pb-safe z-50">
             <div className="max-w-md mx-auto px-4">
                 <div className="flex items-center justify-around h-16">
                     {tabs.map((tab) => {
@@ -23,16 +23,16 @@ export default function BottomNav() {
                             <button
                                 key={tab.path}
                                 onClick={() => navigate(tab.path)}
-                                className={`flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-2xl transition-all active:scale-95
+                                className={`flex flex-col items-center justify-center gap-1 px-5 py-2 rounded-2xl transition-all active:scale-95
                                     ${isActive 
-                                        ? 'bg-gray-100' 
-                                        : 'bg-transparent'
+                                        ? 'theme-bg-primary border theme-border' 
+                                        : 'hover:theme-bg-secondary'
                                     }`}
                             >
                                 <Icon 
                                     size={24} 
-                                    className={isActive ? 'text-gray-900' : 'text-gray-400'}
-                                    strokeWidth={isActive ? 2.5 : 2}
+                                    className={isActive ? 'theme-text-gray' : 'theme-text-muted'}
+                                    strokeWidth={isActive ? 2 : 1.5}
                                 />
                             </button>
                         )

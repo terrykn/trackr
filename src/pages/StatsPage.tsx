@@ -137,7 +137,7 @@ function WeeklySummaryCard({ currentDate }: { currentDate: Date }) {
     }, [weekDays, allEvents]);
 
     return (
-        <div className="bg-white rounded-3xl p-4 mx-4 mt-4 border border-gray-100">
+        <div className=" rounded-3xl p-4 mx-4 mt-4 border border-gray-100">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Weekly Summary</h3>
             <div className="grid grid-cols-4 gap-3">
                 <div className="text-center">
@@ -195,7 +195,7 @@ function WeeklyCompletionChart({ currentDate, onDateChange }: { currentDate: Dat
     const maxTasks = Math.max(...weekData.map(d => d.tasks.length), 1);
 
     return (
-        <div className="bg-white rounded-3xl p-4 mx-4 mt-4 border border-gray-100">
+        <div className=" rounded-3xl p-4 mx-4 mt-4 border border-gray-100">
             <div className="flex items-center justify-between mb-4">
                 <button
                     onClick={() => onDateChange(subDays(currentDate, 7))}
@@ -328,7 +328,7 @@ function TaskBreakdownCard({ currentDate }: { currentDate: Date }) {
 
     if (tasksThisWeek.length === 0) {
         return (
-            <div className="bg-white rounded-3xl p-4 mx-4 mt-4 border border-gray-100">
+            <div className=" rounded-3xl p-4 mx-4 mt-4 border border-gray-100">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Task Breakdown</h3>
                 <p className="text-gray-400 text-sm text-center py-4">No tasks scheduled this week</p>
             </div>
@@ -336,7 +336,7 @@ function TaskBreakdownCard({ currentDate }: { currentDate: Date }) {
     }
 
     return (
-        <div className="bg-white rounded-3xl p-5 mx-4 mt-4 border border-gray-100">
+        <div className=" rounded-3xl p-5 mx-4 mt-4 border border-gray-100">
             <div className="flex items-center mb-1 gap-2 border-gray-50">
                 <div className="flex-1" />
                 <div className="flex gap-1 flex-shrink-0">

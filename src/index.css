@@ -1,6 +1,44 @@
 @import 'tailwindcss';
 @import 'konsta/react/theme.css';
 
-:root {
-    
+html, body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-base);
+    min-height: 100%;
 }
+
+@theme {
+    --color-brand-primary: #f5f4e7;
+}
+
+:root {
+    --color-brand-primary: #ffec8f;
+    --color-brand-secondary: #e5e4d5;
+    --color-brand-accent: #b75f11;
+    --color-brand-gray: #332929;
+    --color-brand-light-gray: #efe4e4;
+
+    --color-bg-base: #fffdef;
+    --color-bg-card: #ffffff;
+
+    --color-text-base: #222222;
+    --color-text-muted: #464242;
+
+    --color-border: #212121;
+    --color-border-mute: #f5e5dd;
+}
+
+.theme-bg-base { background-color: var(--color-bg-base); }
+.theme-bg-card { background-color: var(--color-bg-card); }
+.theme-bg-primary { background-color: var(--color-brand-primary); }
+.theme-bg-secondary { background-color: var(--color-brand-secondary); }
+.theme-bg-gray { background-color: var(--color-brand-gray); }
+.theme-text-base { color: var(--color-text-base); }
+.theme-text-muted { color: var(--color-text-muted); }
+.theme-text-brand { color: var(--color-brand-primary); }
+.theme-text-accent { color: var(--color-brand-accent); }
+.theme-text-gray { color: var(--color-brand-gray); }
+.theme-border { border-color: var(--color-border); }
+.theme-border-mute { border-color: var(--color-border-mute); }
+
+.theme-card { background-color: var(--color-bg-card); border: var(--border-1) solid var(--color-border); border-radius: var(--radius-md); }
