@@ -49,36 +49,6 @@ const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
     return true;
 };
 
-const calculateEventGeometry = (event: HabitEvent, currentHour: number) => {
-    const [startH, startM] = event.startTime.split(':').map(Number);
-    const [endH, endM] = event.endTime.split(':').map(Number);
-
-    const totalStartMinutes = startH * 60 + startM;
-    const totalEndMinutes = endH * 60 + endM;
-
-    const slotStartMinutes = currentHour * 60;
-    const slotEndMinutes = (currentHour + 1) * 60;
-
-    const segmentStart = Math.max(totalStartMinutes, slotStartMinutes);
-    const segmentEnd = Math.min(totalEndMinutes, slotEndMinutes);
-
-    const durationMinutes = Math.max(0, segmentEnd - segmentStart);
-
-    let topOffsetMinutes = 0;
-    const eventStartsInThisSlot = totalStartMinutes >= slotStartMinutes && totalStartMinutes < slotEndMinutes;
-
-    if (eventStartsInThisSlot) {
-        topOffsetMinutes = startM;
-    } else if (totalStartMinutes < slotStartMinutes) {
-        topOffsetMinutes = 0;
-    }
-
-    const top = `${(topOffsetMinutes / 60) * 60}px`;
-    const height = `${(durationMinutes / 60) * 60}px`;
-
-    return { top, height };
-};
-
 // Helper to darken color
 const darkenColor = (color: string, amount: number = 0.3): string => {
     const hex = color.replace('#', '');

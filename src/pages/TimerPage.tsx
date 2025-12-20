@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Page } from "konsta/react";
 import { Play, Pause, RotateCcw, Square, Plus, X } from 'lucide-react';
 import BottomNav from "../components/BottomNav";
@@ -55,7 +55,7 @@ export default function Timer() {
     const [customHours, setCustomHours] = useState(0);
     const [customMinutes, setCustomMinutes] = useState(60);
     const [customSeconds, setCustomSeconds] = useState(0);
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Get available tasks from calendar events
     const availableTasks = getEvents().filter(event => {

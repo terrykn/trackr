@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Page, Navbar, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
+import { Page, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
 import { useNavigate } from 'react-router';
 import * as LucideIcons from 'lucide-react';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { saveEvent, PALE_COLORS } from '../utils';
 import type { HabitEvent, RepeatFrequency } from '../utils';
 

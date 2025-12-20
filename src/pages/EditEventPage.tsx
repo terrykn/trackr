@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Page, Navbar, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
+import { Page, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, Trash2, ChevronDown } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
