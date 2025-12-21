@@ -2,15 +2,37 @@ import React, { useState, useMemo } from 'react';
 import { Page, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
 import { useNavigate } from 'react-router';
 import * as LucideIcons from 'lucide-react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Pencil } from 'lucide-react';
 import { saveEvent, PALE_COLORS } from '../utils';
 import type { HabitEvent, RepeatFrequency } from '../utils';
 
-const HabitIcons = [
-  'Droplet', 'Walk', 'BookOpen', 'Dumbbell', 'Sun', 'Moon', 'Zap', 'Flame',
-  'Leaf', 'Coffee', 'Heart', 'Feather', 'Briefcase', 'DollarSign',
-  'Bed', 'Utensils', 'Meditation', 'Cloud', 'Sparkles', 'Music'
-] as const;
+// Icons organized by category
+const ICON_CATEGORIES = {
+  'HEALTH & FITNESS': [
+    'Dumbbell', 'Heart', 'Droplet', 'Apple', 'Pill', 'Activity', 'Footprints', 'Bike', 'PersonStanding', 'Salad'
+  ],
+  'PRODUCTIVITY': [
+    'CheckSquare', 'Clock', 'Target', 'Calendar', 'ListTodo', 'Timer', 'Zap', 'Trophy', 'Flag', 'Bookmark'
+  ],
+  'HOME': [
+    'Home', 'Bed', 'Utensils', 'ShowerHead', 'Sofa', 'Lamp', 'Key', 'DoorOpen', 'Flower2', 'Dog'
+  ],
+  'FINANCE': [
+    'DollarSign', 'Wallet', 'CreditCard', 'PiggyBank', 'TrendingUp', 'Receipt', 'Coins', 'Banknote', 'Calculator', 'Briefcase'
+  ],
+  'HOBBIES': [
+    'Gamepad2', 'Mountain', 'Tent', 'Fish', 'Camera', 'Bike', 'Plane', 'Map', 'Compass', 'Anchor'
+  ],
+  'CREATIVE': [
+    'Palette', 'Brush', 'PenTool', 'Music', 'Mic', 'Film', 'BookOpen', 'Feather', 'Sparkles', 'Lightbulb'
+  ],
+  'SOCIAL': [
+    'Users', 'MessageCircle', 'Phone', 'Mail', 'Heart', 'Gift', 'PartyPopper', 'Handshake', 'UserPlus', 'Share2'
+  ],
+};
+
+// Flat list of all icons for default
+const HabitIcons = Object.values(ICON_CATEGORIES).flat();
 
 // Preset units organized by category
 const UNIT_PRESETS = {
@@ -51,7 +73,7 @@ export default function CreateEventPage() {
 
   const SelectedIcon = useMemo(() => {
     const I = LucideIcons[icon as keyof typeof LucideIcons] as React.ElementType;
-    return I ? <I size={32} /> : null;
+    return I ? <I size={32} strokeWidth={1.5} /> : null;
   }, [icon]);
 
   const toggleDay = (i: number) => {
@@ -101,14 +123,24 @@ export default function CreateEventPage() {
   return (
     <Page className="theme-bg-base">
       <div className="px-4 pb-20 pt-8">
+        {/* Icon with pencil edit badge */}
         <div className="flex gap-4 justify-center mb-6">
-          <button
-            onClick={() => setIsIconSheetOpen(true)}
-            className="w-20 h-20 rounded-2xl border theme-border flex items-center justify-center transition-transform hover:scale-105"
-            style={{ backgroundColor: color }}
-          >
-            {SelectedIcon}
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsIconSheetOpen(true)}
+              className="w-20 h-20 rounded-2xl border theme-border flex items-center justify-center transition-transform hover:scale-105"
+              style={{ backgroundColor: color }}
+            >
+              {SelectedIcon}
+            </button>
+            {/* Pencil badge - flatter and minimal */}
+            <button
+              onClick={() => setIsIconSheetOpen(true)}
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full theme-bg-gray theme-border border flex items-center justify-center"
+            >
+              <Pencil size={12} className="text-white" />
+            </button>
+          </div>
         </div>
 
         <div className="flex justify-center gap-2 mb-6 flex-wrap px-4">
@@ -336,24 +368,46 @@ export default function CreateEventPage() {
         onBackdropClick={() => setIsIconSheetOpen(false)}
         className="pb-safe theme-bg-base"
       >
-        <Block className="!mt-0 pt-4">
+        <Block className="!mt-0 pt-4 max-h-[70vh] overflow-y-auto">
           <p className="text-xl font-bold mb-4 text-center theme-text-base">Choose Icon</p>
-          <div className="gri
-
-d grid-cols-5 gap-3">
-            {HabitIcons.map((iconName) => {
-              const I = LucideIcons[iconName as keyof typeof LucideIcons] as React.ElementType;
-              return (
-                <button
-                  key={iconName}
-                  onClick={() => { setIcon(iconName); setIsIconSheetOpen(false); }}
-                  className="w-full aspect-square rounded-xl flex items-center justify-center theme-bg-card border theme-border hover:theme-bg-secondary transition-colors theme-text-base"
-                >
-                  {I ? <I size={24} /> : null}
-                </button>
-              )
-            })}
-          </div>
+          
+          {Object.entries(ICON_CATEGORIES).map(([category, icons]) => (
+            <div key={category} className="mb-4">
+              <p className="text-[10px] font-semibold theme-text-muted uppercase tracking-wider mb-2 px-1">
+                {category}
+              </p>
+              <div className="rounded-2xl theme-bg-card border theme-border p-2">
+                <div className="grid grid-cols-10 gap-1">
+                  {icons.map((iconName) => {
+                    const I = LucideIcons[iconName as keyof typeof LucideIcons] as React.ElementType;
+                    const isSelected = icon === iconName;
+                    return (
+                      <button
+                        key={iconName}
+                        onClick={() => { setIcon(iconName); setIsIconSheetOpen(false); }}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                          isSelected 
+                            ? 'theme-bg-gray text-white' 
+                            : 'hover:theme-bg-secondary theme-text-base'
+                        }`}
+                      >
+                        {I ? <I size={16} /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          <Button
+            large
+            rounded
+            onClick={() => setIsIconSheetOpen(false)}
+            className="mt-4 theme-bg-secondary theme-text-gray font-bold"
+          >
+            Close
+          </Button>
         </Block>
       </Sheet>
 
@@ -388,8 +442,9 @@ d grid-cols-5 gap-3">
           ))}
           <Button
             large
+            rounded
             onClick={() => setIsUnitSheetOpen(false)}
-            className="mt-4 theme-bg-card theme-text-base border theme-border"
+            className="mt-4 theme-bg-secondary theme-text-gray font-bold"
           >
             Close
           </Button>

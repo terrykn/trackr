@@ -205,9 +205,10 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
     return (
         <div
             ref={containerRef}
-            className={`relative overflow-hidden rounded-2xl mb-3 cursor-pointer transition-all border theme-border theme-bg-card
+            className={`relative overflow-hidden rounded-2xl mb-3 cursor-pointer transition-all border theme-border
                 ${isDragging ? 'scale-[1.02]' : 'active:scale-[0.98]'}
             `}
+            style={{ backgroundColor: lightenColor(event.color, 0.8)}}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
