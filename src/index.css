@@ -4,7 +4,21 @@
 html, body {
     background-color: var(--color-bg-base);
     color: var(--color-text-base);
-    min-height: 100%;
+    
+    height: 100%;
+    width: 100%;
+    
+    overflow: hidden; 
+    position: fixed;
+    
+    overscroll-behavior: none;
+}
+
+#root {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 @theme {
@@ -12,13 +26,13 @@ html, body {
 }
 
 :root {
-    --color-brand-primary: #ffec8f;
-    --color-brand-secondary: #e5e4d5;
-    --color-brand-accent: #b75f11;
+    --color-brand-primary: #ffefa1;
+    --color-brand-secondary: #ecebe0;
+    --color-brand-accent: #964319;
     --color-brand-gray: #332929;
     --color-brand-light-gray: #efe4e4;
 
-    --color-bg-base: #fffdef;
+    --color-bg-base: #faf9f1;
     --color-bg-card: #ffffff;
 
     --color-text-base: #222222;
@@ -40,5 +54,4 @@ html, body {
 .theme-text-gray { color: var(--color-brand-gray); }
 .theme-border { border-color: var(--color-border); }
 .theme-border-mute { border-color: var(--color-border-mute); }
-
 .theme-card { background-color: var(--color-bg-card); border: var(--border-1) solid var(--color-border); border-radius: var(--radius-md); }

@@ -73,7 +73,7 @@ export default function CreateEventPage() {
 
   const SelectedIcon = useMemo(() => {
     const I = LucideIcons[icon as keyof typeof LucideIcons] as React.ElementType;
-    return I ? <I size={32} strokeWidth={1.5} /> : null;
+    return I ? <I size={36} strokeWidth={1} /> : null;
   }, [icon]);
 
   const toggleDay = (i: number) => {

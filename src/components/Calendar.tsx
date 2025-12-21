@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Sunrise, Sun, Moon } from 'lucide-react';
+import { Sunrise, Sun, Moon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router';
 import {
@@ -9,11 +9,40 @@ import {
 } from 'date-fns';
 import { getEvents, getProgressPercent, isDateDeleted, updateEventProgress, getEventProgress } from '../utils';
 import type { HabitEvent } from '../utils';
-import { Button } from 'konsta/react';
+
+const useSwipe = (onSwipeLeft: () => void, onSwipeRight: () => void) => {
+    const touchStart = useRef<number | null>(null);
+    const touchEnd = useRef<number | null>(null);
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        touchEnd.current = null;
+        touchStart.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        touchEnd.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart.current || !touchEnd.current) return;
+        const distance = touchStart.current - touchEnd.current;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe) {
+            onSwipeLeft();
+        } else if (isRightSwipe) {
+            onSwipeRight();
+        }
+    };
+
+    return { onTouchStart, onTouchMove, onTouchEnd };
+};
 
 const EventIcon = ({ name, size = 18 }: { name: string, size?: number }) => {
     const Icon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType;
-    return Icon ? <Icon size={size} strokeWidth={2} /> : null;
+    return Icon ? <Icon size={size} strokeWidth={1.5} /> : null;
 };
 
 const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
@@ -86,27 +115,16 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
     const start = startOfWeek(currentDate, { weekStartsOn: 0 });
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
+    const swipeHandlers = useSwipe(
+        () => onDateChange(addDays(currentDate, 7)), // Left swipe = Next week
+        () => onDateChange(subDays(currentDate, 7))  // Right swipe = Prev week
+    );
+
     return (
-        <div className="pb-2 px-4 theme-bg-base border-b theme-border">
-            <div className="flex items-center justify-between mb-2">
-                <Button 
-                    clear
-                    onClick={() => onDateChange(subDays(currentDate, 7))} 
-                    className="w-10 h-10 rounded-2xl theme-text-gray"
-                >
-                    <ChevronLeft size={20} />
-                </Button>
-                <span className="text-lg font-semibold tracking-wide theme-text-base">
-                    {format(currentDate, 'MMMM yyyy')}
-                </span>
-                <Button 
-                    clear
-                    onClick={() => onDateChange(addDays(currentDate, 7))} 
-                    className="w-10 h-10 rounded-2xl theme-text-gray"
-                >
-                    <ChevronRight size={20} />
-                </Button>
-            </div>
+        <div 
+            className="pb-2 px-4 theme-bg-base border-b theme-border select-none"
+            {...swipeHandlers}
+        >
             <div className="flex justify-between items-center gap-1">
                 {weekDays.map((date) => {
                     const isSelected = isSameDay(date, currentDate);
@@ -234,7 +252,8 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                 <div className="flex justify-between items-start mb-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center theme-bg-card theme-text-gray border theme-border flex-shrink-0"
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 theme-text-gray border border-theme"
+                            style={{ backgroundColor: lightenColor(event.color, 0.9) }}
                         >
                             <EventIcon name={event.icon} size={20} />
                         </div>
@@ -360,30 +379,48 @@ export function DayView({ currentDate }: { currentDate: Date }) {
 }
 
 export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Date, onDateChange: (d: Date) => void }) {
-   const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-   const end = addDays(start, 6);
+    const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+    const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
-   return (
-       <div className="pb-4 px-4 theme-border flex items-center justify-between theme-bg-base">
-           <Button 
-                clear
-               onClick={() => onDateChange(subDays(currentDate, 7))} 
-               className="w-10 h-10 rounded-2xl theme-text-gray"
-           >
-               <ChevronLeft size={20} />
-           </Button>
-           <span className="text-md font-semibold theme-text-base">
-               {format(start, 'MMM d')} - {format(end, 'MMM d, yyyy')}
-           </span>
-           <Button 
-                clear
-               onClick={() => onDateChange(addDays(currentDate, 7))} 
-               className="w-10 h-10 rounded-2xl theme-bg-card theme-text-gray"
-           >
-               <ChevronRight size={20} />
-           </Button>
-       </div>
-   );
+    const swipeHandlers = useSwipe(
+        () => onDateChange(addDays(currentDate, 7)),
+        () => onDateChange(subDays(currentDate, 7))
+    );
+
+    return (
+        <div 
+            className="theme-bg-base theme-border-b select-none"
+            {...swipeHandlers}
+            // style ensures the header reserves space for a scrollbar if the body has one
+            style={{ scrollbarGutter: 'stable' }} 
+        >
+            {/* MATCHED GRID: 3rem for the time spacer, then 7 equal columns */}
+            <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
+                {/* This empty div aligns with the time labels below */}
+                <div className="w-12" /> 
+                
+                {days.map(d => {
+                    const isToday = isSameDay(d, new Date());
+                    return (
+                        <div 
+                            key={d.toString()} 
+                            className="text-center pb-1 pt-1 min-w-0 cursor-pointer transition-colors active:opacity-60"
+                            onClick={() => onDateChange(d)}
+                        >
+                            <div className="text-[9px] font-semibold uppercase">
+                                {format(d, 'EEE')}
+                            </div>
+                            <div className={`text-md font-bold w-8 h-8 flex items-center justify-center mx-auto rounded-full transition-all
+                                ${isToday ? 'theme-bg-secondary theme-text-base' : 'theme-text-base'}`}
+                            >
+                                {format(d, 'd')}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
 }
 
 export function WeekEventBlock({ event, date, onEventClick, style }: {
@@ -440,7 +477,7 @@ export function WeekEventBlock({ event, date, onEventClick, style }: {
 export function WeekView({ currentDate }: { currentDate: Date }) {
    const start = startOfWeek(currentDate, { weekStartsOn: 0 });
    const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-   const hours = Array.from({ length: 24 }, (_, i) => i); // All 24 hours
+   const hours = Array.from({ length: 24 }, (_, i) => i);
 
    const events = useMemo(() => getEvents(), []);
    const navigate = useNavigate();
@@ -525,30 +562,17 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
        const firstHourStart = firstHour * 60;
        const topOffsetMinutes = totalStartMinutes - firstHourStart;
 
-       const top = `${(topOffsetMinutes / 60) * 60 + 8}px`; // Added 8px offset for top padding
+       const top = `${(topOffsetMinutes / 60) * 60}px`;
        const height = `${(durationMinutes / 60) * 60}px`;
 
        return { top, height };
    };
 
    return (
-       <div className="h-full overflow-y-auto pb-16.5 theme-bg-base">
-           {/* Header */}
-           <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] sticky top-0 z-40 theme-bg-base theme-border">
-               <div className="flex-shrink-0" />
-               {days.map(d => {
-                   const isToday = isSameDay(d, new Date());
-                   return (
-                       <div key={d.toString()} className="text-center py-2 min-w-0">
-                           <div className="text-[10px] theme-text-muted font-bold uppercase">{format(d, 'EEEEE')}</div>
-                           <div className={`text-sm font-bold ${isToday ? 'theme-text-accent' : 'theme-text-base'}`}>
-                               {format(d, 'd')}
-                           </div>
-                       </div>
-                   );
-               })}
-           </div>
-
+       <div 
+            className="h-full overflow-y-auto pb-27 theme-bg-base"
+            style={{ scrollbarGutter: 'stable' }} 
+        >
            {/* Time grid with events overlay */}
            <div className="relative pt-2">
                {/* Hour rows */}

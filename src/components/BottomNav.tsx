@@ -25,7 +25,7 @@ export default function BottomNav() {
                                 onClick={() => navigate(tab.path)}
                                 className={`flex flex-col items-center justify-center gap-1 px-5 py-2 rounded-2xl transition-all active:scale-95
                                     ${isActive 
-                                        ? 'theme-bg-primary border theme-border' 
+                                        ? 'theme-bg-secondary border theme-border-mute' 
                                         : 'hover:theme-bg-secondary'
                                     }`}
                             >
