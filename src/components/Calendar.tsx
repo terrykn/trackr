@@ -107,7 +107,7 @@ const lightenColor = (color: string, amount: number = 0.3): string => {
     const newB = Math.min(255, Math.floor(b + (255 - b) * amount));
 
     const toHex = (val: number) => val.toString(16).padStart(2, '0');
-    
+
     return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 };
 
@@ -121,7 +121,7 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
     );
 
     return (
-        <div 
+        <div
             className="pb-2 px-4 theme-bg-base border-b theme-border select-none"
             {...swipeHandlers}
         >
@@ -138,7 +138,7 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
                                     ? 'theme-bg-primary theme-border theme-text-gray border'
                                     : isToday
                                         ? 'theme-bg-secondary theme-border theme-text-gray'
-                                        : 'border-transparent theme-text-gray hover:theme-bg-card'
+                                        : 'border-transparent theme-text-gray'
                                 }`}
                         >
                             <span className="text-[9px] font-semibold uppercase mb-0.5">
@@ -226,7 +226,7 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
             className={`relative overflow-hidden rounded-2xl mb-3 cursor-pointer transition-all border theme-border
                 ${isDragging ? 'scale-[1.02]' : 'active:scale-[0.98]'}
             `}
-            style={{ backgroundColor: lightenColor(event.color, 0.8)}}
+            style={{ backgroundColor: lightenColor(event.color, 0.8) }}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -276,7 +276,7 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                             <div className="flex flex-row items-center justify-between w-full gap-3">
                                 <span className="text-xs theme-text-muted flex-shrink-0">{event.startTime} - {event.endTime}</span>
                                 {event.repeatFrequency === 'week' && (
-                                    <span className="text-[10px] font-semibold theme-text-muted uppercase tracking-wide flex-shrink-0">
+                                    <span className="text-[9px] font-semibold theme-text-muted uppercase tracking-wide flex-shrink-0">
                                         Every {event.repeatEvery} {event.repeatFrequency}
                                     </span>
                                 )}
@@ -295,7 +295,7 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                             className={`w-2.5 h-2.5 rounded-full border theme-border`}
                             style={{ backgroundColor: isCompleted ? '#76f7a5ff' : event.color }}
                         />
-                        <span 
+                        <span
                             className={`text-[10px] font-medium ${isCompleted ? 'theme-text-base' : 'theme-text-muted'}`}
                         >
                             {isCompleted ? 'Completed' : `${Math.round(progressPercent)}%`}
@@ -388,22 +388,22 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
     );
 
     return (
-        <div 
+        <div
             className="theme-bg-base theme-border-b select-none"
             {...swipeHandlers}
             // style ensures the header reserves space for a scrollbar if the body has one
-            style={{ scrollbarGutter: 'stable' }} 
+            style={{ scrollbarGutter: 'stable' }}
         >
             {/* MATCHED GRID: 3rem for the time spacer, then 7 equal columns */}
             <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
                 {/* This empty div aligns with the time labels below */}
-                <div className="w-12" /> 
-                
+                <div className="w-12" />
+
                 {days.map(d => {
                     const isToday = isSameDay(d, new Date());
                     return (
-                        <div 
-                            key={d.toString()} 
+                        <div
+                            key={d.toString()}
                             className="text-center pb-1 pt-1 min-w-0 cursor-pointer transition-colors active:opacity-60"
                             onClick={() => onDateChange(d)}
                         >
@@ -424,205 +424,205 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
 }
 
 export function WeekEventBlock({ event, date, onEventClick, style }: {
-  event: HabitEvent,
-  date: Date,
-  onEventClick: (eventId: string, date: Date) => void,
-  style: React.CSSProperties,
+    event: HabitEvent,
+    date: Date,
+    onEventClick: (eventId: string, date: Date) => void,
+    style: React.CSSProperties,
 }) {
-  const dateISO = format(date, 'yyyy-MM-dd');
-  const progress = getProgressPercent(event, dateISO);
+    const dateISO = format(date, 'yyyy-MM-dd');
+    const progress = getProgressPercent(event, dateISO);
 
-  const isCompact = style.width && parseFloat(style.width as string) < 50;
+    const isCompact = style.width && parseFloat(style.width as string) < 50;
 
-  return (
-      <div
-          className="absolute overflow-hidden cursor-pointer active:scale-[0.98] transition-transform rounded-lg border"
-          title={`${event.name} (${event.startTime} - ${event.endTime})`}
-          onClick={(e) => {
-              e.stopPropagation();
-              onEventClick(event.id, date);
-          }}
-          style={{ 
-              ...style,
-              borderColor: darkenColor(event.color, 0.15),
-              background: lightenColor(event.color, 0.9),
-          }}
-      >
-          {/* Icon */}
-          <div className={`absolute ${isCompact ? 'top-1 left-1/2 -translate-x-1/2' : 'top-0.5 right-0.5'} z-10 theme-text-gray`}>
-              <EventIcon name={event.icon} size={isCompact ? 12 : 10} />
-          </div>
-          
-          {/* Event name */}
-          {!isCompact && (
-              <div className="pt-3 px-1 pb-1 relative z-10">
-                  <span className="text-[10px] font-semibold leading-tight break-words line-clamp-3 theme-text-gray">
-                      {event.name}
-                  </span>
-              </div>
-          )}
-          
-          {/* Progress fill from bottom */}
-          <div
-              className="absolute bottom-0 left-0 right-0 transition-all duration-500 ease-out"
-              style={{ 
-                  height: `${progress}%`, 
-                  backgroundColor: event.color,
-              }}
-          />
-      </div>
-  );
+    return (
+        <div
+            className="absolute overflow-hidden cursor-pointer active:scale-[0.98] transition-transform rounded-lg border"
+            title={`${event.name} (${event.startTime} - ${event.endTime})`}
+            onClick={(e) => {
+                e.stopPropagation();
+                onEventClick(event.id, date);
+            }}
+            style={{
+                ...style,
+                borderColor: darkenColor(event.color, 0.15),
+                background: lightenColor(event.color, 0.6),
+            }}
+        >
+            {/* Icon */}
+            <div className={`absolute ${isCompact ? 'top-1 left-1/2 -translate-x-1/2' : 'top-0.5 right-0.5'} z-10 theme-text-gray`}>
+                <EventIcon name={event.icon} size={isCompact ? 12 : 10} />
+            </div>
+
+            {/* Event name */}
+            {!isCompact && (
+                <div className="pt-3 px-1 pb-1 relative z-10">
+                    <span className="text-[10px] font-semibold leading-tight break-words line-clamp-3 theme-text-gray">
+                        {event.name}
+                    </span>
+                </div>
+            )}
+
+            {/* Progress fill from bottom */}
+            <div
+                className="absolute bottom-0 left-0 right-0 transition-all duration-500 ease-out"
+                style={{
+                    height: `${progress}%`,
+                    backgroundColor: event.color,
+                }}
+            />
+        </div>
+    );
 }
 
 export function WeekView({ currentDate }: { currentDate: Date }) {
-   const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-   const hours = Array.from({ length: 24 }, (_, i) => i);
+    const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+    const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+    const hours = Array.from({ length: 24 }, (_, i) => i);
 
-   const events = useMemo(() => getEvents(), []);
-   const navigate = useNavigate();
+    const events = useMemo(() => getEvents(), []);
+    const navigate = useNavigate();
 
-   const handleEventClick = (eventId: string, clickedDate: Date) => {
-       const dateISO = format(clickedDate, 'yyyy-MM-dd');
-       navigate(`/edit/${eventId}?date=${dateISO}`);
-   };
+    const handleEventClick = (eventId: string, clickedDate: Date) => {
+        const dateISO = format(clickedDate, 'yyyy-MM-dd');
+        navigate(`/edit/${eventId}?date=${dateISO}`);
+    };
 
-   const getEventsForDay = (day: Date) => {
-       const dayISO = format(day, 'yyyy-MM-dd');
+    const getEventsForDay = (day: Date) => {
+        const dayISO = format(day, 'yyyy-MM-dd');
 
-       return events.filter(e => {
-           if (!doesEventOccurOnDate(e, day)) return false;
-           if (isDateDeleted(e.id, dayISO)) return false;
-           return true;
-       });
-   };
+        return events.filter(e => {
+            if (!doesEventOccurOnDate(e, day)) return false;
+            if (isDateDeleted(e.id, dayISO)) return false;
+            return true;
+        });
+    };
 
-   const calculateEventPositions = (dayEvents: HabitEvent[]) => {
-       const positions: Map<string, { column: number, totalColumns: number }> = new Map();
+    const calculateEventPositions = (dayEvents: HabitEvent[]) => {
+        const positions: Map<string, { column: number, totalColumns: number }> = new Map();
 
-       const sortedEvents = [...dayEvents].sort((a, b) => {
-           const aStart = a.startTime.split(':').map(Number);
-           const bStart = b.startTime.split(':').map(Number);
-           return (aStart[0] * 60 + aStart[1]) - (bStart[0] * 60 + bStart[1]);
-       });
+        const sortedEvents = [...dayEvents].sort((a, b) => {
+            const aStart = a.startTime.split(':').map(Number);
+            const bStart = b.startTime.split(':').map(Number);
+            return (aStart[0] * 60 + aStart[1]) - (bStart[0] * 60 + bStart[1]);
+        });
 
-       const columns: { endTime: number, eventId: string }[] = [];
+        const columns: { endTime: number, eventId: string }[] = [];
 
-       sortedEvents.forEach(event => {
-           const [startH, startM] = event.startTime.split(':').map(Number);
-           const [endH, endM] = event.endTime.split(':').map(Number);
-           const eventStart = startH * 60 + startM;
-           const eventEnd = endH * 60 + endM;
+        sortedEvents.forEach(event => {
+            const [startH, startM] = event.startTime.split(':').map(Number);
+            const [endH, endM] = event.endTime.split(':').map(Number);
+            const eventStart = startH * 60 + startM;
+            const eventEnd = endH * 60 + endM;
 
-           let columnIndex = columns.findIndex(col => col.endTime <= eventStart);
+            let columnIndex = columns.findIndex(col => col.endTime <= eventStart);
 
-           if (columnIndex === -1) {
-               columnIndex = columns.length;
-               columns.push({ endTime: eventEnd, eventId: event.id });
-           } else {
-               columns[columnIndex] = { endTime: eventEnd, eventId: event.id };
-           }
+            if (columnIndex === -1) {
+                columnIndex = columns.length;
+                columns.push({ endTime: eventEnd, eventId: event.id });
+            } else {
+                columns[columnIndex] = { endTime: eventEnd, eventId: event.id };
+            }
 
-           positions.set(event.id, { column: columnIndex, totalColumns: 0 });
-       });
+            positions.set(event.id, { column: columnIndex, totalColumns: 0 });
+        });
 
-       sortedEvents.forEach(event => {
-           const [startH, startM] = event.startTime.split(':').map(Number);
-           const [endH, endM] = event.endTime.split(':').map(Number);
-           const eventStart = startH * 60 + startM;
-           const eventEnd = endH * 60 + endM;
+        sortedEvents.forEach(event => {
+            const [startH, startM] = event.startTime.split(':').map(Number);
+            const [endH, endM] = event.endTime.split(':').map(Number);
+            const eventStart = startH * 60 + startM;
+            const eventEnd = endH * 60 + endM;
 
-           const overlappingEvents = sortedEvents.filter(other => {
-               const [otherStartH, otherStartM] = other.startTime.split(':').map(Number);
-               const [otherEndH, otherEndM] = other.endTime.split(':').map(Number);
-               const otherStart = otherStartH * 60 + otherStartM;
-               const otherEnd = otherEndH * 60 + otherEndM;
+            const overlappingEvents = sortedEvents.filter(other => {
+                const [otherStartH, otherStartM] = other.startTime.split(':').map(Number);
+                const [otherEndH, otherEndM] = other.endTime.split(':').map(Number);
+                const otherStart = otherStartH * 60 + otherStartM;
+                const otherEnd = otherEndH * 60 + otherEndM;
 
-               return eventStart < otherEnd && eventEnd > otherStart;
-           });
+                return eventStart < otherEnd && eventEnd > otherStart;
+            });
 
-           const maxColumn = Math.max(...overlappingEvents.map(e => positions.get(e.id)!.column));
-           overlappingEvents.forEach(e => {
-               const pos = positions.get(e.id)!;
-               pos.totalColumns = Math.max(pos.totalColumns, maxColumn + 1);
-           });
-       });
+            const maxColumn = Math.max(...overlappingEvents.map(e => positions.get(e.id)!.column));
+            overlappingEvents.forEach(e => {
+                const pos = positions.get(e.id)!;
+                pos.totalColumns = Math.max(pos.totalColumns, maxColumn + 1);
+            });
+        });
 
-       return positions;
-   };
+        return positions;
+    };
 
-   const calculateFullEventGeometry = (event: HabitEvent, firstHour: number) => {
-       const [startH, startM] = event.startTime.split(':').map(Number);
-       const [endH, endM] = event.endTime.split(':').map(Number);
+    const calculateFullEventGeometry = (event: HabitEvent, firstHour: number) => {
+        const [startH, startM] = event.startTime.split(':').map(Number);
+        const [endH, endM] = event.endTime.split(':').map(Number);
 
-       const totalStartMinutes = startH * 60 + startM;
-       const totalEndMinutes = endH * 60 + endM;
-       const durationMinutes = totalEndMinutes - totalStartMinutes;
+        const totalStartMinutes = startH * 60 + startM;
+        const totalEndMinutes = endH * 60 + endM;
+        const durationMinutes = totalEndMinutes - totalStartMinutes;
 
-       const firstHourStart = firstHour * 60;
-       const topOffsetMinutes = totalStartMinutes - firstHourStart;
+        const firstHourStart = firstHour * 60;
+        const topOffsetMinutes = totalStartMinutes - firstHourStart;
 
-       const top = `${(topOffsetMinutes / 60) * 60}px`;
-       const height = `${(durationMinutes / 60) * 60}px`;
+        const top = `${(topOffsetMinutes / 60) * 60}px`;
+        const height = `${(durationMinutes / 60) * 60}px`;
 
-       return { top, height };
-   };
+        return { top, height };
+    };
 
-   return (
-       <div 
+    return (
+        <div
             className="h-full overflow-y-auto pb-27 theme-bg-base"
-            style={{ scrollbarGutter: 'stable' }} 
+            style={{ scrollbarGutter: 'stable' }}
         >
-           {/* Time grid with events overlay */}
-           <div className="relative pt-2">
-               {/* Hour rows */}
-               {hours.map(hour => (
-                   <div key={hour} className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] h-[60px] relative">
-                       <div className="text-[10px] theme-text-muted text-right pr-2 flex items-start justify-end">
-                           <span className="-translate-y-1/2">{hour}:00</span>
-                       </div>
-                       {days.map(d => (
-                           <div key={d.toString()} className="border-l border-t relative min-w-0 theme-border-mute" />
-                       ))}
-                   </div>
-               ))}
+            {/* Time grid with events overlay */}
+            <div className="relative pt-2">
+                {/* Hour rows */}
+                {hours.map(hour => (
+                    <div key={hour} className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] h-[60px] relative">
+                        <div className="text-[10px] theme-text-muted text-right pr-2 flex items-start justify-end">
+                            <span className="-translate-y-1/2">{hour}:00</span>
+                        </div>
+                        {days.map(d => (
+                            <div key={d.toString()} className="border-l border-t relative min-w-0 theme-border-mute" />
+                        ))}
+                    </div>
+                ))}
 
-               {/* Events overlay */}
-               <div className="absolute top-2 left-[3rem] right-0 bottom-0 pointer-events-none">
-                   <div className="grid grid-cols-7 h-full">
-                       {days.map(d => {
-                           const dayEvents = getEventsForDay(d);
-                           const positions = calculateEventPositions(dayEvents);
+                {/* Events overlay */}
+                <div className="absolute top-2 left-[3rem] right-0 bottom-0 pointer-events-none">
+                    <div className="grid grid-cols-7 h-full">
+                        {days.map(d => {
+                            const dayEvents = getEventsForDay(d);
+                            const positions = calculateEventPositions(dayEvents);
 
-                           return (
-                               <div key={d.toString()} className="relative min-w-0 pointer-events-auto">
-                                   {dayEvents.map(event => {
-                                       const geometry = calculateFullEventGeometry(event, hours[0]);
-                                       const pos = positions.get(event.id)!;
-                                       const width = `calc(${100 / pos.totalColumns}% - 2px)`;
-                                       const left = `calc(${(pos.column / pos.totalColumns) * 100}% + 1px)`;
+                            return (
+                                <div key={d.toString()} className="relative min-w-0 pointer-events-auto">
+                                    {dayEvents.map(event => {
+                                        const geometry = calculateFullEventGeometry(event, hours[0]);
+                                        const pos = positions.get(event.id)!;
+                                        const width = `calc(${100 / pos.totalColumns}% - 2px)`;
+                                        const left = `calc(${(pos.column / pos.totalColumns) * 100}% + 1px)`;
 
-                                       return (
-                                           <WeekEventBlock
-                                               key={event.id}
-                                               event={event}
-                                               date={d}
-                                               onEventClick={handleEventClick}
-                                               style={{
-                                                   top: geometry.top,
-                                                   height: geometry.height,
-                                                   width,
-                                                   left,
-                                               }}
-                                           />
-                                       );
-                                   })}
-                               </div>
-                           );
-                       })}
-                   </div>
-               </div>
-           </div>
-       </div>
-   );
+                                        return (
+                                            <WeekEventBlock
+                                                key={event.id}
+                                                event={event}
+                                                date={d}
+                                                onEventClick={handleEventClick}
+                                                style={{
+                                                    top: geometry.top,
+                                                    height: geometry.height,
+                                                    width,
+                                                    left,
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }

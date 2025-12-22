@@ -67,7 +67,7 @@ export default function CreateEventPage() {
   const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>('week');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const [recurrenceEndType, setRecurrenceEndType] = useState<RecurrenceEndType>('never');
+  const [recurrenceEndType, setRecurrenceEndType] = useState<RecurrenceEndType>('none');
   const [endDateInput, setEndDateInput] = useState(addDays(new Date(), 7).toISOString().split('T')[0]);
 
 

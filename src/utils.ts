@@ -24,7 +24,6 @@ export interface Completion {
 
 const EVENTS_KEY = 'habit_tracker_events';
 const COMPLETIONS_KEY = 'habit_tracker_completions';
-// 🚨 NEW KEY for storing deleted exceptions
 const DELETED_EXCEPTIONS_KEY = 'habit_deleted_exceptions';
 
 
@@ -70,7 +69,6 @@ export const saveEvent = (event: HabitEvent) => {
             ...events.slice(existingIndex + 1)
         ];
     } else {
-        // Add new event (original behavior)
         newEvents = [...events, event];
     }
 
@@ -81,12 +79,10 @@ export const saveEvent = (event: HabitEvent) => {
  * Deletes an event and all its associated data (past, present, and future).
  */
 export const deleteEventAll = (id: string) => {
-    // 1. Delete the event itself
     const events = getEvents();
     const newEvents = events.filter(event => event.id !== id);
     localStorage.setItem(EVENTS_KEY, JSON.stringify(newEvents));
 
-    // 2. Clean up completions
     let completionsMap: Record<string, number> = {};
     try {
         const item = localStorage.getItem(COMPLETIONS_KEY);
@@ -102,7 +98,6 @@ export const deleteEventAll = (id: string) => {
         console.error("Error cleaning up completions:", error);
     }
 
-    // 3. Clean up exceptions
     try {
         const exceptionsItem = localStorage.getItem(DELETED_EXCEPTIONS_KEY);
         let exceptions: Record<string, string[]> = exceptionsItem ? JSON.parse(exceptionsItem) : {};
@@ -112,8 +107,6 @@ export const deleteEventAll = (id: string) => {
         console.error("Error cleaning up exceptions:", error);
     }
 };
-
-// --- EXCEPTION HANDLING (New) ---
 
 const getDeletedExceptions = (): Record<string, string[]> => {
     try {
@@ -186,9 +179,6 @@ export const deleteEventFuture = (eventId: string, date: string) => {
         }
     }
 };
-
-
-// --- COMPLETION GETTERS (No changes needed, but included for completeness) ---
 
 export const getCompletion = (eventId: string, date: string): number => {
     try {
