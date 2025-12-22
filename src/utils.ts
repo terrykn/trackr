@@ -7,8 +7,9 @@ export interface HabitEvent {
     color: string;
     goalAmount: number;
     goalUnit: string;
-    startTime: string; // "HH:MM"
-    endTime: string;   // "HH:MM"
+    isAllDay: boolean; // NEW: indicates if habit is all-day or has specific time
+    startTime?: string; // "HH:MM" - optional now
+    endTime?: string;   // "HH:MM" - optional now
     repeatDays: number[]; // 0 = Sunday
     repeatEvery: number;
     repeatFrequency: RepeatFrequency;
@@ -25,7 +26,6 @@ export interface Completion {
 const EVENTS_KEY = 'habit_tracker_events';
 const COMPLETIONS_KEY = 'habit_tracker_completions';
 const DELETED_EXCEPTIONS_KEY = 'habit_deleted_exceptions';
-
 
 export const PALE_COLORS = [
     '#FFD1DC', // Pastel Pink

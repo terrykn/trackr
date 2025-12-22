@@ -59,6 +59,7 @@ export default function CreateEventPage() {
   const [goalAmount, setGoalAmount] = useState('5');
   const [goalUnit, setGoalUnit] = useState('cups');
 
+  const [isAllDay, setIsAllDay] = useState(true); // New state for all-day toggle
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('09:00');
 
@@ -80,39 +81,51 @@ export default function CreateEventPage() {
     setRepeatDays(prev => prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i].sort());
   };
 
-  const handleSave = () => {
+const handleSave = () => {
     if (!name || name.trim().length === 0) {
-      alert('Please enter a name for your habit before creating it.');
-      return;
+        alert('Please enter a name for your habit before creating it.');
+        return;
     }
 
     let finalEndDate: string | undefined;
 
     if (recurrenceEndType === 'never') {
-      finalEndDate = NEVER_END_DATE;
+        finalEndDate = NEVER_END_DATE;
     } else if (recurrenceEndType === 'on_date') {
-      finalEndDate = new Date(endDateInput).toISOString();
+        // Save as date string without time
+        finalEndDate = endDateInput; // This is already in YYYY-MM-DD format
     } else if (recurrenceEndType === 'none') {
-      finalEndDate = new Date(startDate).toISOString();
+        // For one-time events, end date should be the same as start date
+        finalEndDate = startDate; // This is already in YYYY-MM-DD format
     }
 
     const isSingleDay = recurrenceEndType === 'none';
     const newId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
 
-    saveEvent({
-      id: newId,
-      name: name.trim(),
-      icon, color,
-      goalAmount: parseInt(goalAmount) || 0, goalUnit,
-      startTime, endTime,
-      repeatDays: isSingleDay ? [] : repeatDays,
-      repeatEvery: isSingleDay ? 1 : (parseInt(repeatEvery) || 1),
-      repeatFrequency: isSingleDay ? 'day' as RepeatFrequency : repeatFrequency,
-      startDate: new Date(startDate).toISOString(),
-      endDate: finalEndDate,
-    } as HabitEvent);
+    const habitEvent: HabitEvent = {
+        id: newId,
+        name: name.trim(),
+        icon, 
+        color,
+        goalAmount: parseInt(goalAmount) || 0, 
+        goalUnit,
+        isAllDay,
+        repeatDays: isSingleDay ? [] : repeatDays,
+        repeatEvery: isSingleDay ? 1 : (parseInt(repeatEvery) || 1),
+        repeatFrequency: isSingleDay ? 'day' as RepeatFrequency : repeatFrequency,
+        startDate: startDate, // Already in YYYY-MM-DD format
+        endDate: finalEndDate,
+    };
+
+    // Only add time fields if not all-day
+    if (!isAllDay) {
+        habitEvent.startTime = startTime;
+        habitEvent.endTime = endTime;
+    }
+
+    saveEvent(habitEvent);
     navigate('/');
-  };
+};
 
   function addDays(date: Date, days: number): Date {
     const result = new Date(date);
@@ -190,29 +203,54 @@ export default function CreateEventPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
-            <ListInput
-              label="Start"
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="theme-text-base"
-            />
-          </List>
-          <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
-            <ListInput
-              label="End"
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="theme-text-base"
-            />
-          </List>
+        {/* Time Type Selector */}
+        <div className="mb-4">
+          <p className="text-sm theme-text-muted mb-2 font-medium ml-1">Time Settings</p>
+          <Segmented rounded strong className="theme-bg-card border theme-border">
+            <SegmentedButton
+              active={isAllDay}
+              onClick={() => setIsAllDay(true)}
+              className={isAllDay ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+            >
+              All Day
+            </SegmentedButton>
+            <SegmentedButton
+              active={!isAllDay}
+              onClick={() => setIsAllDay(false)}
+              className={!isAllDay ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+            >
+              Specific Time
+            </SegmentedButton>
+          </Segmented>
         </div>
+
+        {/* Time inputs - only shown when not all-day */}
+        {!isAllDay && (
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
+              <ListInput
+                label="Start"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="theme-text-base"
+              />
+            </List>
+            <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
+              <ListInput
+                label="End"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="theme-text-base"
+              />
+            </List>
+          </div>
+        )}
 
         <Block className="!px-0 !my-2">
           <div className="my-4">
+            <p className="text-sm theme-text-muted mb-2 font-medium ml-1">Recurrence</p>
             <Segmented rounded strong className="theme-bg-card border theme-border">
               <SegmentedButton
                 active={recurrenceEndType === 'none'}

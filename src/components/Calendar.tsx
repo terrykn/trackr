@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { Sunrise, Sun, Moon } from 'lucide-react';
+import { Sunrise, Sun, Moon, Calendar as CalendarIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router';
 import {
@@ -49,8 +49,21 @@ const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
     const start = parseISO(event.startDate);
     const end = event.endDate ? parseISO(event.endDate) : new Date(2100, 0, 1);
 
+    // For one-time events, we need to check if the date matches exactly
+    // Check this BEFORE the interval check
+    const isOneTime = event.repeatFrequency === 'day' && event.repeatEvery === 1 && event.repeatDays.length === 0;
+    
+    if (isOneTime) {
+        // Compare dates without time components
+        const startDateOnly = format(start, 'yyyy-MM-dd');
+        const checkDateOnly = format(date, 'yyyy-MM-dd');
+        return startDateOnly === checkDateOnly;
+    }
+
+    // For recurring events, check if date is within range
     if (!isWithinInterval(date, { start, end })) return false;
 
+    // Handle recurring events
     if (event.repeatFrequency === 'week') {
         const dayOfWeek = getDay(date);
         if (!event.repeatDays.includes(dayOfWeek)) return false;
@@ -69,10 +82,6 @@ const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
         if (yearsDiff % event.repeatEvery !== 0) return false;
 
         if (date.getMonth() !== start.getMonth() || date.getDate() !== start.getDate()) return false;
-    }
-
-    if (event.repeatFrequency === 'day' && event.repeatEvery === 1 && event.repeatDays.length === 0) {
-        return isSameDay(date, start);
     }
 
     return true;
@@ -274,7 +283,12 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                                 )}
                             </div>
                             <div className="flex flex-row items-center justify-between w-full gap-3">
-                                <span className="text-xs theme-text-muted flex-shrink-0">{event.startTime} - {event.endTime}</span>
+                                {!event.isAllDay && (
+                                    <span className="text-xs theme-text-muted flex-shrink-0">{event.startTime} - {event.endTime}</span>
+                                )}
+                                {event.isAllDay && (
+                                    <span className="text-xs theme-text-muted flex-shrink-0">All Day</span>
+                                )}
                                 {event.repeatFrequency === 'week' && (
                                     <span className="text-[9px] font-semibold theme-text-muted uppercase tracking-wide flex-shrink-0">
                                         Every {event.repeatEvery} {event.repeatFrequency}
@@ -315,14 +329,20 @@ export function DayView({ currentDate }: { currentDate: Date }) {
         navigate(`/edit/${eventId}?date=${dateISO}`);
     };
 
-    const events = useMemo(() => {
+    const { allDayEvents, timedEvents } = useMemo(() => {
         const dateISO = format(currentDate, 'yyyy-MM-dd');
 
         const all = getEvents();
-        return all
+        const filtered = all
             .filter(e => doesEventOccurOnDate(e, currentDate))
-            .filter(e => !isDateDeleted(e.id, dateISO))
-            .sort((a, b) => a.startTime.localeCompare(b.startTime));
+            .filter(e => !isDateDeleted(e.id, dateISO));
+
+        const allDayEvents = filtered.filter(e => e.isAllDay);
+        const timedEvents = filtered
+            .filter(e => !e.isAllDay)
+            .sort((a, b) => a.startTime!.localeCompare(b.startTime!));
+
+        return { allDayEvents, timedEvents };
     }, [currentDate]);
 
     const { morning, afternoon, night } = useMemo(() => {
@@ -330,14 +350,14 @@ export function DayView({ currentDate }: { currentDate: Date }) {
         const afternoon: HabitEvent[] = [];
         const night: HabitEvent[] = [];
 
-        events.forEach(e => {
-            const h = parseInt(e.startTime.split(':')[0], 10);
+        timedEvents.forEach(e => {
+            const h = parseInt(e.startTime!.split(':')[0], 10);
             if (h < 12) morning.push(e);
             else if (h < 17) afternoon.push(e);
             else night.push(e);
         });
         return { morning, afternoon, night };
-    }, [events]);
+    }, [timedEvents]);
 
     const Section = ({ title, icon, items }: { title: string, icon: React.ReactNode, items: HabitEvent[] }) => (
         items.length > 0 ? (
@@ -360,7 +380,7 @@ export function DayView({ currentDate }: { currentDate: Date }) {
 
     return (
         <div className="px-4 py-4 h-full overflow-y-auto pb-24 theme-bg-base">
-            {events.length === 0 ? (
+            {allDayEvents.length === 0 && timedEvents.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full">
                     <div className="mb-4">
                         <Sun size={28} strokeWidth={1.5} className="theme-text-gray" />
@@ -369,6 +389,7 @@ export function DayView({ currentDate }: { currentDate: Date }) {
                 </div>
             ) : (
                 <>
+                    <Section title="All Day" icon={<CalendarIcon size={14} />} items={allDayEvents} />
                     <Section title="Morning" icon={<Sunrise size={14} />} items={morning} />
                     <Section title="Afternoon" icon={<Sun size={14} />} items={afternoon} />
                     <Section title="Night" icon={<Moon size={14} />} items={night} />
@@ -389,14 +410,11 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
 
     return (
         <div
-            className="theme-bg-base theme-border-b select-none"
+            className="theme-bg-base select-none"
             {...swipeHandlers}
-            // style ensures the header reserves space for a scrollbar if the body has one
             style={{ scrollbarGutter: 'stable' }}
         >
-            {/* MATCHED GRID: 3rem for the time spacer, then 7 equal columns */}
             <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
-                {/* This empty div aligns with the time labels below */}
                 <div className="w-12" />
 
                 {days.map(d => {
@@ -418,6 +436,56 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
                         </div>
                     );
                 })}
+            </div>
+        </div>
+    );
+}
+
+export function AllDayWeekEventBlock({ event, date, onEventClick }: {
+    event: HabitEvent,
+    date: Date,
+    onEventClick: (eventId: string, date: Date) => void,
+}) {
+    const dateISO = format(date, 'yyyy-MM-dd');
+    const progress = getProgressPercent(event, dateISO);
+    const isCompleted = progress >= 100;
+
+    return (
+        <div
+            className="h-8 rounded-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-all border relative"
+            onClick={(e) => {
+                e.stopPropagation();
+                onEventClick(event.id, date);
+            }}
+            style={{
+                borderColor: darkenColor(event.color, 0.15),
+                backgroundColor: lightenColor(event.color, 0.6),
+            }}
+        >
+            {/* Progress fill from left */}
+            <div
+                className="absolute top-0 left-0 bottom-0 transition-all duration-500 ease-out"
+                style={{
+                    width: `${progress}%`,
+                    backgroundColor: event.color,
+                    opacity: 0.7,
+                }}
+            />
+
+            {/* Content */}
+            <div className="relative z-10 h-full flex items-center gap-1.5 px-2">
+                <div className="theme-text-gray flex-shrink-0">
+                    <EventIcon name={event.icon} size={14} />
+                </div>
+                <span className="text-[10px] font-semibold truncate theme-text-gray flex-1">
+                    {event.name}
+                </span>
+                {isCompleted && (
+                    <div
+                        className="w-2 h-2 rounded-full border theme-border flex-shrink-0"
+                        style={{ backgroundColor: '#76f7a5ff' }}
+                    />
+                )}
             </div>
         </div>
     );
@@ -497,20 +565,28 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
         });
     };
 
+    const getAllDayEventsForDay = (day: Date) => {
+        return getEventsForDay(day).filter(e => e.isAllDay);
+    };
+
+    const getTimedEventsForDay = (day: Date) => {
+        return getEventsForDay(day).filter(e => !e.isAllDay);
+    };
+
     const calculateEventPositions = (dayEvents: HabitEvent[]) => {
         const positions: Map<string, { column: number, totalColumns: number }> = new Map();
 
         const sortedEvents = [...dayEvents].sort((a, b) => {
-            const aStart = a.startTime.split(':').map(Number);
-            const bStart = b.startTime.split(':').map(Number);
+            const aStart = a.startTime!.split(':').map(Number);
+            const bStart = b.startTime!.split(':').map(Number);
             return (aStart[0] * 60 + aStart[1]) - (bStart[0] * 60 + bStart[1]);
         });
 
         const columns: { endTime: number, eventId: string }[] = [];
 
         sortedEvents.forEach(event => {
-            const [startH, startM] = event.startTime.split(':').map(Number);
-            const [endH, endM] = event.endTime.split(':').map(Number);
+            const [startH, startM] = event.startTime!.split(':').map(Number);
+            const [endH, endM] = event.endTime!.split(':').map(Number);
             const eventStart = startH * 60 + startM;
             const eventEnd = endH * 60 + endM;
 
@@ -527,14 +603,14 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
         });
 
         sortedEvents.forEach(event => {
-            const [startH, startM] = event.startTime.split(':').map(Number);
-            const [endH, endM] = event.endTime.split(':').map(Number);
+            const [startH, startM] = event.startTime!.split(':').map(Number);
+            const [endH, endM] = event.endTime!.split(':').map(Number);
             const eventStart = startH * 60 + startM;
             const eventEnd = endH * 60 + endM;
 
             const overlappingEvents = sortedEvents.filter(other => {
-                const [otherStartH, otherStartM] = other.startTime.split(':').map(Number);
-                const [otherEndH, otherEndM] = other.endTime.split(':').map(Number);
+                const [otherStartH, otherStartM] = other.startTime!.split(':').map(Number);
+                const [otherEndH, otherEndM] = other.endTime!.split(':').map(Number);
                 const otherStart = otherStartH * 60 + otherStartM;
                 const otherEnd = otherEndH * 60 + otherEndM;
 
@@ -552,8 +628,8 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
     };
 
     const calculateFullEventGeometry = (event: HabitEvent, firstHour: number) => {
-        const [startH, startM] = event.startTime.split(':').map(Number);
-        const [endH, endM] = event.endTime.split(':').map(Number);
+        const [startH, startM] = event.startTime!.split(':').map(Number);
+        const [endH, endM] = event.endTime!.split(':').map(Number);
 
         const totalStartMinutes = startH * 60 + startM;
         const totalEndMinutes = endH * 60 + endM;
@@ -568,11 +644,42 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
         return { top, height };
     };
 
+    // Calculate max number of all-day events across all days
+    const maxAllDayEvents = useMemo(() => {
+        return Math.max(...days.map(d => getAllDayEventsForDay(d).length), 0);
+    }, [days]);
+
     return (
         <div
             className="h-full overflow-y-auto pb-27 theme-bg-base"
             style={{ scrollbarGutter: 'stable' }}
         >
+            {/* All-day events section */}
+            {maxAllDayEvents > 0 && (
+                <div>
+                    <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] py-2">
+                        <div className="text-[10px] theme-text-muted text-right pr-2 flex items-start justify-end pt-1">
+                            <span>All Day</span>
+                        </div>
+                        {days.map(d => {
+                            const allDayEvents = getAllDayEventsForDay(d);
+                            return (
+                                <div key={d.toString()} className="px-1 min-w-0 space-y-1">
+                                    {allDayEvents.map(event => (
+                                        <AllDayWeekEventBlock
+                                            key={event.id}
+                                            event={event}
+                                            date={d}
+                                            onEventClick={handleEventClick}
+                                        />
+                                    ))}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Time grid with events overlay */}
             <div className="relative pt-2">
                 {/* Hour rows */}
@@ -591,7 +698,7 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
                 <div className="absolute top-2 left-[3rem] right-0 bottom-0 pointer-events-none">
                     <div className="grid grid-cols-7 h-full">
                         {days.map(d => {
-                            const dayEvents = getEventsForDay(d);
+                            const dayEvents = getTimedEventsForDay(d);
                             const positions = calculateEventPositions(dayEvents);
 
                             return (
