@@ -74,9 +74,9 @@ export default function TaskBreakdownCard({ currentDate }: { currentDate: Date }
 
     if (tasksThisWeek.length === 0) {
         return (
-            <div className="bg-white rounded-3xl p-4 mx-4 mt-4 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Task Breakdown</h3>
-                <p className="text-gray-400 text-sm text-center py-4">No tasks scheduled this week</p>
+            <div className="theme-bg-card rounded-2xl p-3.5 mx-4 mt-4 border theme-border">
+                <h3 className="text-sm font-semibold theme-text-muted uppercase tracking-wide mb-3">Task Breakdown</h3>
+                <p className="theme-text-muted text-sm text-center py-4">No tasks scheduled this week</p>
             </div>
         );
     }
