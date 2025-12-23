@@ -1,3 +1,5 @@
+import { differenceInCalendarMonths, differenceInCalendarWeeks, differenceInCalendarYears, getDay, isSameDay, isWithinInterval, parseISO } from "date-fns";
+
 export type RepeatFrequency = 'day' | 'week' | 'month' | 'year';
 
 export interface HabitEvent {
@@ -21,6 +23,12 @@ export interface Completion {
     eventId: string;
     date: string; // ISO Date YYYY-MM-DD
     amount: number;
+}
+
+export interface TaskWithCompletion {
+    event: HabitEvent;
+    isCompleted: boolean;
+    progress: number;
 }
 
 const EVENTS_KEY = 'habit_tracker_events';
@@ -284,6 +292,39 @@ export const createFollowingEvent = (originalEvent: HabitEvent, fromDate: string
     saveEvent(updatedOriginal);
     
     return newId;
+};
+
+export const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
+    const start = parseISO(event.startDate);
+    const end = event.endDate ? parseISO(event.endDate) : new Date(2100, 0, 1);
+
+    if (!isWithinInterval(date, { start, end })) return false;
+
+    if (event.repeatFrequency === 'week') {
+        const dayOfWeek = getDay(date);
+        if (!event.repeatDays.includes(dayOfWeek)) return false;
+
+        const weeksDiff = differenceInCalendarWeeks(date, start, { weekStartsOn: 0 });
+        if (weeksDiff % event.repeatEvery !== 0) return false;
+
+    } else if (event.repeatFrequency === 'month') {
+        const monthsDiff = differenceInCalendarMonths(date, start);
+        if (monthsDiff % event.repeatEvery !== 0) return false;
+
+        if (date.getDate() !== start.getDate()) return false;
+
+    } else if (event.repeatFrequency === 'year') {
+        const yearsDiff = differenceInCalendarYears(date, start);
+        if (yearsDiff % event.repeatEvery !== 0) return false;
+
+        if (date.getMonth() !== start.getMonth() || date.getDate() !== start.getDate()) return false;
+    }
+
+    if (event.repeatFrequency === 'day' && event.repeatEvery === 1 && event.repeatDays.length === 0) {
+        return isSameDay(date, start);
+    }
+
+    return true;
 };
 
 export const lightenColor = (color: string, amount: number = 0.3): string => {

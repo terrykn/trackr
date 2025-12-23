@@ -30,13 +30,14 @@ html, body {
     --color-brand-secondary: #f1f1ef;
     --color-brand-accent: #964319;
     --color-brand-gray: #332929;
-    --color-brand-light-gray: #f0e8e8;
+    --color-brand-light-gray: #cacaca;
 
     --color-bg-base: #fafafa;
     --color-bg-card: #ffffff;
+    --color-bg-light-gray: #f9f9f9;
 
     --color-text-base: #222222;
-    --color-text-muted: #464242;
+    --color-text-muted: #858585;
 
     --color-border: #212121;
     --color-border-mute: #f6f1ef;
@@ -47,11 +48,13 @@ html, body {
 .theme-bg-primary { background-color: var(--color-brand-primary); }
 .theme-bg-secondary { background-color: var(--color-brand-secondary); }
 .theme-bg-gray { background-color: var(--color-brand-gray); }
+.theme-bg-light-gray { background-color: var(--color-bg-light-gray); }
 .theme-text-base { color: var(--color-text-base); }
 .theme-text-muted { color: var(--color-text-muted); }
 .theme-text-brand { color: var(--color-brand-primary); }
 .theme-text-accent { color: var(--color-brand-accent); }
 .theme-text-gray { color: var(--color-brand-gray); }
+.theme-text-light-gray { color: var(--color-brand-light-gray); }
 .theme-border { border-color: var(--color-border); }
 .theme-border-mute { border-color: var(--color-border-mute); }
 .theme-card { background-color: var(--color-bg-card); border: var(--border-1) solid var(--color-border); border-radius: var(--radius-md); }

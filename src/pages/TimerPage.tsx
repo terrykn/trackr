@@ -73,8 +73,6 @@ export default function Timer() {
     const presetOptions = [5, 15, 25, 60];
     const activePreset = presetOptions.find(minutes => minutes * 60 === timeLeft);
 
-    const accentColor = selectedTask?.color || '#6b7280';
-
     useEffect(() => {
         if (timerState === 'running' && timeLeft > 0) {
             intervalRef.current = setInterval(() => {

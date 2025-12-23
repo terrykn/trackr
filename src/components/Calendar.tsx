@@ -257,7 +257,7 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                                         {daysMap.map((day, index) => (
                                             <span
                                                 key={index}
-                                                className={`text-xs font-bold leading-tight ${event.repeatDays.includes(index) ? 'theme-text-gray' : 'theme-text-muted opacity-40'}`}
+                                                className={`text-xs font-bold leading-tight ${event.repeatDays.includes(index) ? 'theme-text-gray' : 'theme-text-light-gray'}`}
                                             >
                                                 {day}
                                             </span>

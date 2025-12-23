@@ -61,11 +61,6 @@ function addDays(date: Date, days: number): Date {
     return result;
 }
 
-const EventIcon = ({ name, size = 32 }: { name: string, size?: number }) => {
-    const Icon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType;
-    return Icon ? <Icon size={size} strokeWidth={1.5} /> : null;
-};
-
 export default function EditEventPage() {
     const navigate = useNavigate();
     const { eventId } = useParams<{ eventId: string }>();
