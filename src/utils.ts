@@ -75,39 +75,6 @@ export const saveEvent = (event: HabitEvent) => {
     localStorage.setItem(EVENTS_KEY, JSON.stringify(newEvents));
 };
 
-/**
- * Deletes an event and all its associated data (past, present, and future).
- */
-export const deleteEventAll = (id: string) => {
-    const events = getEvents();
-    const newEvents = events.filter(event => event.id !== id);
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(newEvents));
-
-    let completionsMap: Record<string, number> = {};
-    try {
-        const item = localStorage.getItem(COMPLETIONS_KEY);
-        completionsMap = item ? JSON.parse(item) : {};
-        const newCompletionsMap = Object.keys(completionsMap).reduce((acc, key) => {
-            if (!key.startsWith(`${id}_`)) {
-                acc[key] = completionsMap[key];
-            }
-            return acc;
-        }, {} as Record<string, number>);
-        localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(newCompletionsMap));
-    } catch (error) {
-        console.error("Error cleaning up completions:", error);
-    }
-
-    try {
-        const exceptionsItem = localStorage.getItem(DELETED_EXCEPTIONS_KEY);
-        let exceptions: Record<string, string[]> = exceptionsItem ? JSON.parse(exceptionsItem) : {};
-        delete exceptions[id];
-        localStorage.setItem(DELETED_EXCEPTIONS_KEY, JSON.stringify(exceptions));
-    } catch (error) {
-        console.error("Error cleaning up exceptions:", error);
-    }
-};
-
 const getDeletedExceptions = (): Record<string, string[]> => {
     try {
         const item = localStorage.getItem(DELETED_EXCEPTIONS_KEY);
@@ -203,3 +170,150 @@ export function getProgressPercent(event: HabitEvent, dateISO: string): number {
     const progress = getEventProgress(event.id, dateISO);
     return Math.min(100, (progress / event.goalAmount) * 100);
 }
+
+// Add to existing types
+export interface EventException {
+    eventId: string;
+    date: string; // ISO Date YYYY-MM-DD
+    modifiedFields: Partial<HabitEvent>;
+}
+
+const EXCEPTIONS_KEY = 'habit_event_exceptions';
+
+// Exception management functions
+export const getExceptions = (): EventException[] => {
+    try {
+        const item = localStorage.getItem(EXCEPTIONS_KEY);
+        return item ? JSON.parse(item) : [];
+    } catch { return []; }
+};
+
+export const saveException = (exception: EventException) => {
+    const exceptions = getExceptions();
+    const existingIndex = exceptions.findIndex(
+        e => e.eventId === exception.eventId && e.date === exception.date
+    );
+
+    let newExceptions: EventException[];
+    if (existingIndex !== -1) {
+        newExceptions = [
+            ...exceptions.slice(0, existingIndex),
+            exception,
+            ...exceptions.slice(existingIndex + 1)
+        ];
+    } else {
+        newExceptions = [...exceptions, exception];
+    }
+
+    localStorage.setItem(EXCEPTIONS_KEY, JSON.stringify(newExceptions));
+};
+
+export const getExceptionForDate = (eventId: string, date: string): EventException | undefined => {
+    const exceptions = getExceptions();
+    return exceptions.find(e => e.eventId === eventId && e.date === date);
+};
+
+export const deleteExceptionsForEvent = (eventId: string) => {
+    const exceptions = getExceptions();
+    const filtered = exceptions.filter(e => e.eventId !== eventId);
+    localStorage.setItem(EXCEPTIONS_KEY, JSON.stringify(filtered));
+};
+
+export const deleteExceptionForDate = (eventId: string, date: string) => {
+    const exceptions = getExceptions();
+    const filtered = exceptions.filter(e => !(e.eventId === eventId && e.date === date));
+    localStorage.setItem(EXCEPTIONS_KEY, JSON.stringify(filtered));
+};
+
+// Update deleteEventAll to also clear exceptions
+export const deleteEventAll = (id: string) => {
+    const events = getEvents();
+    const newEvents = events.filter(event => event.id !== id);
+    localStorage.setItem(EVENTS_KEY, JSON.stringify(newEvents));
+
+    let completionsMap: Record<string, number> = {};
+    try {
+        const item = localStorage.getItem(COMPLETIONS_KEY);
+        completionsMap = item ? JSON.parse(item) : {};
+        const newCompletionsMap = Object.keys(completionsMap).reduce((acc, key) => {
+            if (!key.startsWith(`${id}_`)) {
+                acc[key] = completionsMap[key];
+            }
+            return acc;
+        }, {} as Record<string, number>);
+        localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(newCompletionsMap));
+    } catch (error) {
+        console.error("Error cleaning up completions:", error);
+    }
+
+    try {
+        const exceptionsItem = localStorage.getItem(DELETED_EXCEPTIONS_KEY);
+        let exceptions: Record<string, string[]> = exceptionsItem ? JSON.parse(exceptionsItem) : {};
+        delete exceptions[id];
+        localStorage.setItem(DELETED_EXCEPTIONS_KEY, JSON.stringify(exceptions));
+    } catch (error) {
+        console.error("Error cleaning up exceptions:", error);
+    }
+
+    // Clear event exceptions
+    deleteExceptionsForEvent(id);
+};
+
+// Helper to create a new event for "this and following"
+export const createFollowingEvent = (originalEvent: HabitEvent, fromDate: string, updates: Partial<HabitEvent>): string => {
+    const newId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+    
+    const newEvent: HabitEvent = {
+        ...originalEvent,
+        ...updates,
+        id: newId,
+        startDate: fromDate,
+    };
+
+    saveEvent(newEvent);
+    
+    // Update original event to end before this date
+    const originalEndDate = new Date(fromDate);
+    originalEndDate.setDate(originalEndDate.getDate() - 1);
+    
+    const updatedOriginal: HabitEvent = {
+        ...originalEvent,
+        endDate: originalEndDate.toISOString().split('T')[0],
+    };
+    
+    saveEvent(updatedOriginal);
+    
+    return newId;
+};
+
+export const lightenColor = (color: string, amount: number = 0.3): string => {
+    let hex = color.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    const newR = Math.min(255, Math.floor(r + (255 - r) * amount));
+    const newG = Math.min(255, Math.floor(g + (255 - g) * amount));
+    const newB = Math.min(255, Math.floor(b + (255 - b) * amount));
+
+    const toHex = (val: number) => val.toString(16).padStart(2, '0');
+
+    return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
+};
+
+export const darkenColor = (color: string, amount: number = 0.3): string => {
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    const newR = Math.floor(r * (1 - amount));
+    const newG = Math.floor(g * (1 - amount));
+    const newB = Math.floor(b * (1 - amount));
+
+    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+};

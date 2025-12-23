@@ -31,7 +31,7 @@ export default function HomePage() {
                 <div className="flex-1 flex justify-start">
                     <Button
                         clear
-                        className="w-11 h-9 rounded-2xl theme-text-gray theme-bg-secondary"
+                        className="w-11 h-9 rounded-2xl theme-text-gray theme-bg-secondary border theme-border-mute"
                         onClick={toggleViewMode}
                     >
                         {ViewModeIcon}
@@ -50,7 +50,7 @@ export default function HomePage() {
                     <Button
                         clear
                         onClick={() => navigate('/create')}
-                        className="w-11 h-9 rounded-2xl theme-text-gray theme-bg-secondary"
+                        className="w-11 h-9 rounded-2xl theme-text-gray theme-bg-secondary border theme-border-mute"
                     >
                         <Plus size={20} strokeWidth={2} />
                     </Button>

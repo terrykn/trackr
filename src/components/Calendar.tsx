@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Sunrise, Sun, Moon, Calendar as CalendarIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -52,7 +52,7 @@ const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
     // For one-time events, we need to check if the date matches exactly
     // Check this BEFORE the interval check
     const isOneTime = event.repeatFrequency === 'day' && event.repeatEvery === 1 && event.repeatDays.length === 0;
-    
+
     if (isOneTime) {
         // Compare dates without time components
         const startDateOnly = format(start, 'yyyy-MM-dd');
@@ -146,7 +146,7 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
                                 ${isSelected
                                     ? 'theme-bg-primary theme-border theme-text-gray border'
                                     : isToday
-                                        ? 'theme-bg-secondary theme-border theme-text-gray'
+                                        ? 'theme-bg-secondary theme-border-mute border theme-text-gray'
                                         : 'border-transparent theme-text-gray'
                                 }`}
                         >
@@ -166,115 +166,98 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
     const dateISO = format(date, 'yyyy-MM-dd');
     const [currentProgress, setCurrentProgress] = useState(() => getEventProgress(event.id, dateISO));
     const [isDragging, setIsDragging] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const sliderRef = useRef<HTMLDivElement>(null);
 
-    const progressPercent = (currentProgress / event.goalAmount) * 100;
+    const goal = Number(event.goalAmount) || 1;
+    const progressPercent = (currentProgress / goal) * 100;
     const daysMap = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     const updateProgressFromPosition = (clientX: number) => {
-        if (!containerRef.current) return;
+        if (!sliderRef.current) return;
 
-        const rect = containerRef.current.getBoundingClientRect();
+        const rect = sliderRef.current.getBoundingClientRect();
         const x = clientX - rect.left;
+
         const percentage = Math.max(0, Math.min(1, x / rect.width));
-        const newProgress = Math.round(percentage * event.goalAmount);
+        const newProgress = Math.round(percentage * goal);
 
-        setCurrentProgress(newProgress);
-        updateEventProgress(event.id, dateISO, newProgress);
-    };
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-        updateProgressFromPosition(e.clientX);
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging) return;
-        updateProgressFromPosition(e.clientX);
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    const handleMouseLeave = () => {
-        if (isDragging) {
-            setIsDragging(false);
+        if (!isNaN(newProgress)) {
+            setCurrentProgress(newProgress);
+            updateEventProgress(event.id, dateISO, newProgress);
         }
     };
 
-    const handleTouchStart = (e: React.TouchEvent) => {
+    const getClientX = (e: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) => {
+        if ('touches' in e && e.touches.length > 0) {
+            return e.touches[0].clientX;
+        }
+        return (e as MouseEvent | React.MouseEvent).clientX;
+    };
+
+    const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+        e.stopPropagation();
         setIsDragging(true);
-        updateProgressFromPosition(e.touches[0].clientX);
+        updateProgressFromPosition(getClientX(e));
     };
 
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging) return;
-        updateProgressFromPosition(e.touches[0].clientX);
-    };
+    useEffect(() => {
+        const handleMove = (e: MouseEvent | TouchEvent) => {
+            if (!isDragging) return;
+            if (e.type === 'touchmove') e.preventDefault();
+            updateProgressFromPosition(getClientX(e));
+        };
 
-    const handleTouchEnd = () => {
-        setIsDragging(false);
-    };
+        const handleEnd = () => {
+            setIsDragging(false);
+        };
 
-    const handleClick = (e: React.MouseEvent) => {
-        if (isDragging) return;
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+            window.addEventListener('touchmove', handleMove, { passive: false });
+            window.addEventListener('touchend', handleEnd);
+        }
 
-        const target = e.target as HTMLElement;
-        if (target.closest('.progress-area')) return;
+        return () => {
+            window.removeEventListener('mousemove', handleMove);
+            window.removeEventListener('mouseup', handleEnd);
+            window.removeEventListener('touchmove', handleMove);
+            window.removeEventListener('touchend', handleEnd);
+        };
+    }, [isDragging]);
 
-        onEventClick(event.id);
-    };
-
-    const isCompleted = currentProgress >= event.goalAmount;
+    const isCompleted = currentProgress >= goal;
 
     return (
         <div
-            ref={containerRef}
             className={`relative overflow-hidden rounded-2xl mb-3 cursor-pointer transition-all border theme-border
-                ${isDragging ? 'scale-[1.02]' : 'active:scale-[0.98]'}
+                ${!isDragging ? 'active:scale-[0.98]' : ''}
             `}
-            style={{ backgroundColor: lightenColor(event.color, 0.8) }}
-            onClick={handleClick}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            style={{ backgroundColor: lightenColor(event.color, 0.75) }}
+            onClick={() => onEventClick(event.id)}
         >
-            {/* Progress fill */}
-            <div
-                className="absolute top-0 left-0 bottom-0 transition-all ease-out z-0"
-                style={{
-                    width: `${Math.min(100, progressPercent)}%`,
-                    backgroundColor: event.color,
-                    opacity: 0.7,
-                    transitionDuration: isDragging ? '50ms' : '300ms'
-                }}
-            />
-
             <div className="relative z-10 p-4">
                 {/* Header row */}
-                <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="flex justify-between items-start mb-4">
+                    {/* Changed items-start to items-center for vertical centering with icon */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
                             className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 theme-text-gray border border-theme"
-                            style={{ backgroundColor: lightenColor(event.color, 0.9) }}
+                            style={{ backgroundColor: lightenColor(event.color, 0.15) }}
                         >
                             <EventIcon name={event.icon} size={20} />
                         </div>
-                        <div className="flex flex-col flex-1 min-w-0">
+                        {/* Added justify-center and reduced gap with leading-tight */}
+                        <div className="flex flex-col justify-center flex-1 min-w-0 gap-0.5">
                             <div className="flex flex-row items-center justify-between w-full gap-3">
-                                <span className="theme-text-base text-base font-semibold mb-0.5 truncate">{event.name}</span>
+                                {/* Removed mb-0.5, added leading-tight */}
+                                <span className="theme-text-base text-base font-semibold truncate leading-tight">{event.name}</span>
                                 {event.repeatFrequency === 'week' && (
                                     <div className="flex gap-1.5 flex-shrink-0">
                                         {daysMap.map((day, index) => (
                                             <span
                                                 key={index}
-                                                className={`text-xs font-bold ${event.repeatDays.includes(index) ? 'theme-text-gray' : 'theme-text-muted opacity-40'}`}
+                                                className={`text-xs font-bold leading-tight ${event.repeatDays.includes(index) ? 'theme-text-gray' : 'theme-text-muted opacity-40'}`}
                                             >
                                                 {day}
                                             </span>
@@ -283,14 +266,13 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                                 )}
                             </div>
                             <div className="flex flex-row items-center justify-between w-full gap-3">
-                                {!event.isAllDay && (
-                                    <span className="text-xs theme-text-muted flex-shrink-0">{event.startTime} - {event.endTime}</span>
-                                )}
-                                {event.isAllDay && (
-                                    <span className="text-xs theme-text-muted flex-shrink-0">All Day</span>
+                                {event.isAllDay ? (
+                                    <span className="text-xs theme-text-muted flex-shrink-0 leading-tight">All Day</span>
+                                ) : (
+                                    <span className="text-xs theme-text-muted flex-shrink-0 leading-tight">{event.startTime} - {event.endTime}</span>
                                 )}
                                 {event.repeatFrequency === 'week' && (
-                                    <span className="text-[9px] font-semibold theme-text-muted uppercase tracking-wide flex-shrink-0">
+                                    <span className="text-[9px] font-semibold theme-text-muted uppercase tracking-wide flex-shrink-0 leading-tight">
                                         Every {event.repeatEvery} {event.repeatFrequency}
                                     </span>
                                 )}
@@ -299,20 +281,46 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                     </div>
                 </div>
 
-                {/* Goal section */}
-                <div className="progress-area flex items-center justify-between">
-                    <span className="text-sm theme-text-muted">
-                        Goal: <span className="font-semibold theme-text-base">{currentProgress}/{event.goalAmount} {event.goalUnit}</span>
-                    </span>
-                    <div className="flex items-center gap-1.5">
+                {/* Draggable Progress Bar Section */}
+                <div className="flex items-center">
+                    <div
+                        ref={sliderRef}
+                        className={`progress-area relative flex-1 h-10 bg-black/5 rounded-2xl overflow-hidden cursor-ew-resize touch-none select-none transition-transform duration-150 origin-center
+                            ${isDragging ? 'scale-y-[1.12]' : ''}
+                        `}
+                        onMouseDown={handleStart}
+                        onTouchStart={handleStart}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Fill Layer */}
                         <div
-                            className={`w-2.5 h-2.5 rounded-full border theme-border`}
-                            style={{ backgroundColor: isCompleted ? '#76f7a5ff' : event.color }}
+                            className="absolute top-0 left-0 bottom-0 transition-all ease-out"
+                            style={{
+                                width: `${Math.min(100, progressPercent)}%`,
+                                backgroundColor: event.color,
+                                transitionDuration: isDragging ? '0ms' : '200ms',
+                                opacity: 0.8
+                            }}
+                        />
+
+                        {/* Text Layer (Goal info) */}
+                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                            <span className={`text-xs font-medium transition-colors duration-200`}>
+                                Goal: <span className="font-bold">{currentProgress}/{event.goalAmount} {event.goalUnit}</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Percentage/Status (Outside) */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0 min-w-[70px] justify-end">
+                        <div
+                            className="w-2.5 h-2.5 rounded-full border theme-border"
+                            style={{ backgroundColor: isCompleted ? '#22c55e' : event.color }}
                         />
                         <span
-                            className={`text-[10px] font-medium ${isCompleted ? 'theme-text-base' : 'theme-text-muted'}`}
+                            className={`text-[11px] font-bold ${isCompleted ? 'text-green-600' : 'theme-text-muted'}`}
                         >
-                            {isCompleted ? 'Completed' : `${Math.round(progressPercent)}%`}
+                            {isCompleted ? 'DONE' : `${Math.round(progressPercent)}%`}
                         </span>
                     </div>
                 </div>
@@ -441,51 +449,20 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
     );
 }
 
-export function AllDayWeekEventBlock({ event, date, onEventClick }: {
-    event: HabitEvent,
-    date: Date,
-    onEventClick: (eventId: string, date: Date) => void,
-}) {
-    const dateISO = format(date, 'yyyy-MM-dd');
-    const progress = getProgressPercent(event, dateISO);
-    const isCompleted = progress >= 100;
-
+export function AllDayWeekEventBlock({ event, date, onEventClick }: { event: HabitEvent, date: Date, onEventClick: (eventId: string, date: Date) => void }) {
+    const progress = getProgressPercent(event, format(date, 'yyyy-MM-dd'));
     return (
         <div
             className="h-8 rounded-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-all border relative"
-            onClick={(e) => {
-                e.stopPropagation();
-                onEventClick(event.id, date);
-            }}
-            style={{
-                borderColor: darkenColor(event.color, 0.15),
-                backgroundColor: lightenColor(event.color, 0.6),
-            }}
+            onClick={(e) => { e.stopPropagation(); onEventClick(event.id, date); }}
+            style={{ borderColor: darkenColor(event.color, 0.15), backgroundColor: lightenColor(event.color, 0.6), marginRight: "4px" }}
         >
-            {/* Progress fill from left */}
-            <div
-                className="absolute top-0 left-0 bottom-0 transition-all duration-500 ease-out"
-                style={{
-                    width: `${progress}%`,
-                    backgroundColor: event.color,
-                    opacity: 0.7,
-                }}
-            />
-
-            {/* Content */}
-            <div className="relative z-10 h-full flex items-center gap-1.5 px-2">
-                <div className="theme-text-gray flex-shrink-0">
-                    <EventIcon name={event.icon} size={14} />
-                </div>
-                <span className="text-[10px] font-semibold truncate theme-text-gray flex-1">
-                    {event.name}
-                </span>
-                {isCompleted && (
-                    <div
-                        className="w-2 h-2 rounded-full border theme-border flex-shrink-0"
-                        style={{ backgroundColor: '#76f7a5ff' }}
-                    />
-                )}
+            <div className="absolute top-0.5 right-0.5 z-20 theme-text-gray opacity-60">
+                <EventIcon name={event.icon} size={10} />
+            </div>
+            <div className="absolute top-0 left-0 bottom-0 transition-all duration-500 ease-out" style={{ width: `${progress}%`, backgroundColor: event.color, opacity: 0.7 }} />
+            <div className="relative z-10 h-full flex items-center px-1">
+                <span className="text-[9px] font-semibold truncate theme-text-gray flex-1">{event.name}</span>
             </div>
         </div>
     );
@@ -658,13 +635,12 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
             {maxAllDayEvents > 0 && (
                 <div>
                     <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] py-2">
-                        <div className="text-[10px] theme-text-muted text-right pr-2 flex items-start justify-end pt-1">
-                            <span>All Day</span>
+                        <div>
                         </div>
                         {days.map(d => {
                             const allDayEvents = getAllDayEventsForDay(d);
                             return (
-                                <div key={d.toString()} className="px-1 min-w-0 space-y-1">
+                                <div key={d.toString()} className="min-w-0 space-y-1">
                                     {allDayEvents.map(event => (
                                         <AllDayWeekEventBlock
                                             key={event.id}
@@ -706,7 +682,7 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
                                     {dayEvents.map(event => {
                                         const geometry = calculateFullEventGeometry(event, hours[0]);
                                         const pos = positions.get(event.id)!;
-                                        const width = `calc(${100 / pos.totalColumns}% - 2px)`;
+                                        const width = `calc(${100 / pos.totalColumns}% - 4px)`;
                                         const left = `calc(${(pos.column / pos.totalColumns) * 100}% + 1px)`;
 
                                         return (

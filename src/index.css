@@ -27,19 +27,19 @@ html, body {
 
 :root {
     --color-brand-primary: #ffefa1;
-    --color-brand-secondary: #ecebe0;
+    --color-brand-secondary: #e8e8e1;
     --color-brand-accent: #964319;
     --color-brand-gray: #332929;
     --color-brand-light-gray: #efe4e4;
 
-    --color-bg-base: #faf9f1;
+    --color-bg-base: #f8f7f1;
     --color-bg-card: #ffffff;
 
     --color-text-base: #222222;
     --color-text-muted: #464242;
 
     --color-border: #212121;
-    --color-border-mute: #f5e5dd;
+    --color-border-mute: #f3ebe8;
 }
 
 .theme-bg-base { background-color: var(--color-bg-base); }

@@ -1,24 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Page, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
 import { useParams, useNavigate, useLocation } from 'react-router';
-import { ArrowLeft, Trash2, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Trash2, ChevronDown, Pencil } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { getEventById, saveEvent, deleteEventAll, deleteEventInstance, deleteEventFuture, PALE_COLORS } from '../utils';
+import { 
+    getEventById, 
+    saveEvent, 
+    deleteEventAll, 
+    deleteEventInstance, 
+    deleteEventFuture, 
+    saveException,
+    getExceptionForDate,
+    createFollowingEvent,
+    PALE_COLORS 
+} from '../utils';
 import type { HabitEvent, RepeatFrequency } from '../utils';
 
-// --- UTILITY COMPONENT FOR DYNAMIC ICON RENDERING ---
-const EventIcon = ({ name, size = 32 }: { name: string, size?: number }) => {
-    const Icon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType;
-    return Icon ? <Icon size={size} strokeWidth={2} /> : null;
+// Icons organized by category
+const ICON_CATEGORIES = {
+    'HEALTH & FITNESS': [
+        'Dumbbell', 'Heart', 'Droplet', 'Apple', 'Pill', 'Activity', 'Footprints', 'Bike', 'PersonStanding', 'Salad'
+    ],
+    'PRODUCTIVITY': [
+        'CheckSquare', 'Clock', 'Target', 'Calendar', 'ListTodo', 'Timer', 'Zap', 'Trophy', 'Flag', 'Bookmark'
+    ],
+    'HOME': [
+        'Home', 'Bed', 'Utensils', 'ShowerHead', 'Sofa', 'Lamp', 'Key', 'DoorOpen', 'Flower2', 'Dog'
+    ],
+    'FINANCE': [
+        'DollarSign', 'Wallet', 'CreditCard', 'PiggyBank', 'TrendingUp', 'Receipt', 'Coins', 'Banknote', 'Calculator', 'Briefcase'
+    ],
+    'HOBBIES': [
+        'Gamepad2', 'Mountain', 'Tent', 'Fish', 'Camera', 'Bike', 'Plane', 'Map', 'Compass', 'Anchor'
+    ],
+    'CREATIVE': [
+        'Palette', 'Brush', 'PenTool', 'Music', 'Mic', 'Film', 'BookOpen', 'Feather', 'Sparkles', 'Lightbulb'
+    ],
+    'SOCIAL': [
+        'Users', 'MessageCircle', 'Phone', 'Mail', 'Heart', 'Gift', 'PartyPopper', 'Handshake', 'UserPlus', 'Share2'
+    ],
 };
-// ---------------------------------------------------------------------------------------------
-
-// --- CONSTANTS ---
-const HabitIcons = [
-    'Droplet', 'Walk', 'BookOpen', 'Dumbbell', 'Sun', 'Moon', 'Zap', 'Flame',
-    'Leaf', 'Coffee', 'Heart', 'Feather', 'Briefcase', 'DollarSign',
-    'Bed', 'Utensils', 'Meditation', 'Cloud', 'Sparkles', 'Music'
-] as const;
 
 // Preset units organized by category
 const UNIT_PRESETS = {
@@ -40,20 +61,24 @@ function addDays(date: Date, days: number): Date {
     return result;
 }
 
+const EventIcon = ({ name, size = 32 }: { name: string, size?: number }) => {
+    const Icon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType;
+    return Icon ? <Icon size={size} strokeWidth={1.5} /> : null;
+};
+
 export default function EditEventPage() {
     const navigate = useNavigate();
     const { eventId } = useParams<{ eventId: string }>();
     const location = useLocation();
 
-    // Parse the date from the query parameter
     const queryParams = new URLSearchParams(location.search);
-    const instanceDate = queryParams.get('date'); // YYYY-MM-DD of the clicked instance
+    const instanceDate = queryParams.get('date');
 
     // --- SHEET STATES ---
     const [isDeleteSheetOpen, setIsDeleteSheetOpen] = useState(false);
+    const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
     const [isIconSheetOpen, setIsIconSheetOpen] = useState(false);
     const [isUnitSheetOpen, setIsUnitSheetOpen] = useState(false);
-    const [isRecurring, setIsRecurring] = useState(false);
 
     // --- FORM STATE ---
     const [name, setName] = useState('');
@@ -63,6 +88,7 @@ export default function EditEventPage() {
     const [goalAmount, setGoalAmount] = useState('5');
     const [goalUnit, setGoalUnit] = useState('cups');
 
+    const [isAllDay, setIsAllDay] = useState(true);
     const [startTime, setStartTime] = useState('08:00');
     const [endTime, setEndTime] = useState('09:00');
 
@@ -76,6 +102,17 @@ export default function EditEventPage() {
 
     const [isLoaded, setIsLoaded] = useState(false);
     const [habitFound, setHabitFound] = useState(false);
+    const [originalEvent, setOriginalEvent] = useState<HabitEvent | null>(null);
+
+    const SelectedIcon = useMemo(() => {
+        const I = LucideIcons[icon as keyof typeof LucideIcons] as React.ElementType;
+        return I ? <I size={36} strokeWidth={1} /> : null;
+    }, [icon]);
+
+    // Determine if this is a recurring event
+    const isRecurring = useMemo(() => {
+        return recurrenceEndType !== 'none';
+    }, [recurrenceEndType]);
 
     // --- LOAD HABIT DATA ON MOUNT ---
     useEffect(() => {
@@ -88,32 +125,46 @@ export default function EditEventPage() {
 
         if (event) {
             setHabitFound(true);
+            setOriginalEvent(event);
 
-            // 1. Core Details
-            setName(event.name);
-            setIcon(event.icon);
-            setColor(event.color);
-            setGoalAmount(event.goalAmount.toString());
-            setGoalUnit(event.goalUnit);
-            setStartTime(event.startTime);
-            setEndTime(event.endTime);
-            setStartDate(event.startDate.split('T')[0]);
+            // Check if there's an exception for this specific date
+            let displayEvent = event;
+            if (instanceDate) {
+                const exception = getExceptionForDate(eventId, instanceDate);
+                if (exception) {
+                    displayEvent = { ...event, ...exception.modifiedFields };
+                }
+            }
+
+            // Load all fields
+            setName(displayEvent.name);
+            setIcon(displayEvent.icon);
+            setColor(displayEvent.color);
+            setGoalAmount(displayEvent.goalAmount.toString());
+            setGoalUnit(displayEvent.goalUnit);
+            setIsAllDay(displayEvent.isAllDay);
+            
+            if (!displayEvent.isAllDay) {
+                setStartTime(displayEvent.startTime || '08:00');
+                setEndTime(displayEvent.endTime || '09:00');
+            }
+            
+            setStartDate(displayEvent.startDate.split('T')[0]);
 
             // Determine if it's recurring
-            const isHabitRecurring = event.repeatFrequency !== 'day' || event.repeatEvery !== 1 || event.repeatDays.length > 0;
-            setIsRecurring(isHabitRecurring);
+            const isHabitRecurring = displayEvent.repeatFrequency !== 'day' || 
+                                    displayEvent.repeatEvery !== 1 || 
+                                    displayEvent.repeatDays.length > 0;
 
-            // 2. Recurrence Logic
-            setRepeatDays(event.repeatDays);
-            setRepeatEvery(event.repeatEvery.toString());
-            setRepeatFrequency(event.repeatFrequency);
+            setRepeatDays(displayEvent.repeatDays);
+            setRepeatEvery(displayEvent.repeatEvery.toString());
+            setRepeatFrequency(displayEvent.repeatFrequency);
 
-            // 3. End Date Logic
-            const isoEndDate = event.endDate ? event.endDate.split('T')[0] : '';
+            const isoEndDate = displayEvent.endDate ? displayEvent.endDate.split('T')[0] : '';
 
             if (!isHabitRecurring) {
                 setRecurrenceEndType('none');
-            } else if (!event.endDate || isoEndDate === NEVER_END_DATE_ISO) {
+            } else if (!displayEvent.endDate || isoEndDate === NEVER_END_DATE_ISO) {
                 setRecurrenceEndType('never');
             } else {
                 setRecurrenceEndType('on_date');
@@ -124,46 +175,140 @@ export default function EditEventPage() {
         }
 
         setIsLoaded(true);
-    }, [eventId, navigate]);
-
+    }, [eventId, navigate, instanceDate]);
 
     const toggleDay = (i: number) => {
         setRepeatDays(prev => prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i].sort());
     };
 
-    const handleSave = () => {
+    /**
+     * Opens the edit confirmation sheet for recurring events
+     */
+    const handleEditAttempt = () => {
         if (!name || name.trim().length === 0) {
             alert('Please enter a name for your habit before saving.');
             return;
         }
 
-        let finalEndDate: string | undefined;
+        if (isRecurring && instanceDate) {
+            setIsEditSheetOpen(true);
+        } else {
+            handleSaveAll();
+        }
+    };
 
+    /**
+     * Save changes to a single instance (create exception)
+     */
+    const handleSaveInstance = () => {
+        if (!eventId || !instanceDate) return;
+
+        const modifiedFields: Partial<HabitEvent> = {
+            name: name.trim(),
+            icon,
+            color,
+            goalAmount: parseInt(goalAmount) || 0,
+            goalUnit,
+            isAllDay,
+        };
+
+        if (!isAllDay) {
+            modifiedFields.startTime = startTime;
+            modifiedFields.endTime = endTime;
+        }
+
+        saveException({
+            eventId,
+            date: instanceDate,
+            modifiedFields,
+        });
+
+        setIsEditSheetOpen(false);
+        navigate('/');
+    };
+
+    /**
+     * Save changes to this instance and all following (create new master rule)
+     */
+    const handleSaveFollowing = () => {
+        if (!eventId || !instanceDate || !originalEvent) return;
+
+        let finalEndDate: string | undefined;
         const isSingleDay = recurrenceEndType === 'none';
 
         if (recurrenceEndType === 'never') {
             finalEndDate = NEVER_END_DATE;
         } else if (recurrenceEndType === 'on_date') {
-            finalEndDate = new Date(endDateInput).toISOString();
+            finalEndDate = endDateInput;
         } else if (isSingleDay) {
-            finalEndDate = new Date(startDate).toISOString();
+            finalEndDate = startDate;
         }
 
-        const idToSave = eventId!;
-
-        saveEvent({
-            id: idToSave,
+        const updates: Partial<HabitEvent> = {
             name: name.trim(),
-            icon, color,
-            goalAmount: parseInt(goalAmount) || 0, goalUnit,
-            startTime, endTime,
+            icon,
+            color,
+            goalAmount: parseInt(goalAmount) || 0,
+            goalUnit,
+            isAllDay,
             repeatDays: isSingleDay ? [] : repeatDays,
             repeatEvery: isSingleDay ? 1 : (parseInt(repeatEvery) || 1),
             repeatFrequency: isSingleDay ? 'day' as RepeatFrequency : repeatFrequency,
-            startDate: new Date(startDate).toISOString(),
+            startDate: instanceDate,
             endDate: finalEndDate,
-        } as HabitEvent);
+        };
 
+        if (!isAllDay)  {
+            updates.startTime = startTime;
+            updates.endTime = endTime;
+        }
+
+        createFollowingEvent(originalEvent, instanceDate, updates);
+
+        setIsEditSheetOpen(false);
+        navigate('/');
+    };
+
+    /**
+     * Save changes to all instances (modify master rule)
+     */
+    const handleSaveAll = () => {
+        if (!eventId) return;
+
+        let finalEndDate: string | undefined;
+        const isSingleDay = recurrenceEndType === 'none';
+
+        if (recurrenceEndType === 'never') {
+            finalEndDate = NEVER_END_DATE;
+        } else if (recurrenceEndType === 'on_date') {
+            finalEndDate = endDateInput;
+        } else if (isSingleDay) {
+            finalEndDate = startDate;
+        }
+
+        const habitEvent: HabitEvent = {
+            id: eventId,
+            name: name.trim(),
+            icon,
+            color,
+            goalAmount: parseInt(goalAmount) || 0,
+            goalUnit,
+            isAllDay,
+            repeatDays: isSingleDay ? [] : repeatDays,
+            repeatEvery: isSingleDay ? 1 : (parseInt(repeatEvery) || 1),
+            repeatFrequency: isSingleDay ? 'day' as RepeatFrequency : repeatFrequency,
+            startDate: startDate,
+            endDate: finalEndDate,
+        };
+
+        if (!isAllDay) {
+            habitEvent.startTime = startTime;
+            habitEvent.endTime = endTime;
+        }
+
+        saveEvent(habitEvent);
+
+        setIsEditSheetOpen(false);
         navigate('/');
     };
 
@@ -196,14 +341,19 @@ export default function EditEventPage() {
     };
 
     if (!isLoaded) {
-        return <Page><Block>Loading...</Block></Page>;
+        return <Page className="theme-bg-base"><Block>Loading...</Block></Page>;
     }
 
     if (isLoaded && !habitFound) {
         return (
-            <Page>
-                <div className="flex items-center justify-between px-4 py-3 ">
-                    <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 active:bg-gray-50 transition-all"><ArrowLeft size={24} /></button>
+            <Page className="theme-bg-base">
+                <div className="flex items-center justify-between px-4 py-3">
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="w-10 h-10 rounded-full theme-bg-card theme-border border flex items-center justify-center theme-text-base active:scale-95 transition-all"
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
                 </div>
                 <Block>Habit not found.</Block>
             </Page>
@@ -211,148 +361,254 @@ export default function EditEventPage() {
     }
 
     return (
-        <Page className="">
-            <div className="flex items-center justify-between px-4 py-3 ">
-                <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 active:bg-gray-50 transition-all"><ArrowLeft size={24} /></button>
-                <button onClick={() => setIsDeleteSheetOpen(true)} className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-red-500 active:scale-95 active:bg-gray-50 transition-all"><Trash2 size={24} /></button>
+        <Page className="theme-bg-base">
+            <div className="flex items-center justify-between px-4 py-3">
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="w-10 h-10 rounded-full theme-bg-card theme-border border flex items-center justify-center theme-text-base active:scale-95 transition-all"
+                >
+                    <ArrowLeft size={24} />
+                </button>
+                <button 
+                    onClick={() => setIsDeleteSheetOpen(true)} 
+                    className="w-10 h-10 rounded-full theme-bg-card theme-border border flex items-center justify-center text-red-500 active:scale-95 transition-all"
+                >
+                    <Trash2 size={24} />
+                </button>
             </div>
 
             <div className="px-4 pb-20 pt-4">
-                {/* ICON AND COLOR SELECTION */}
+                {/* Icon with pencil edit badge */}
                 <div className="flex gap-4 justify-center mb-6">
-                    <button
-                        onClick={() => setIsIconSheetOpen(true)}
-                        className="w-20 h-20 bg-gray-50 rounded-2xl border border-theme flex items-center justify-center"
-                        style={{ backgroundColor: color }}
-                    >
-                        <EventIcon name={icon} size={32} />
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsIconSheetOpen(true)}
+                            className="w-20 h-20 rounded-2xl border theme-border flex items-center justify-center transition-transform hover:scale-105"
+                            style={{ backgroundColor: color }}
+                        >
+                            {SelectedIcon}
+                        </button>
+                        <button
+                            onClick={() => setIsIconSheetOpen(true)}
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full theme-bg-gray theme-border border flex items-center justify-center"
+                        >
+                            <Pencil size={12} className="text-white" />
+                        </button>
+                    </div>
                 </div>
+
                 <div className="flex justify-center gap-2 mb-6 flex-wrap px-4">
                     {PALE_COLORS.map(c => (
                         <button
                             key={c}
                             onClick={() => setColor(c)}
-                            className={`w-8 h-8 rounded-full border-2 transition-transform ${color === c ? 'border-black scale-110' : 'border-transparent'}`}
+                            className={`w-8 h-8 rounded-full border transition-transform theme-border ${
+                                color === c ? 'scale-110 !border-2' : 'border-opacity-30'
+                            }`}
                             style={{ backgroundColor: c }}
                         />
                     ))}
                 </div>
 
-                {/* NAME */}
-                <List strongIos className="!m-0 !mb-4 rounded-2xl bg-gray-50 border border-gray-100">
-                    <ListInput label="Name" type="text" placeholder="Drink water" value={name} onChange={(e) => setName(e.target.value)} />
+                <List strongIos className="!m-0 !mb-4 rounded-2xl theme-bg-card border theme-border">
+                    <ListInput
+                        label="Name"
+                        type="text"
+                        placeholder="Drink water"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="theme-text-base"
+                    />
                 </List>
 
-                {/* GOAL AND UNIT */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
-                    <List strongIos className="!m-0 rounded-2xl bg-gray-50 border border-gray-100">
-                        <ListInput label="Goal" type="number" value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} />
+                    <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
+                        <ListInput
+                            label="Goal"
+                            type="number"
+                            value={goalAmount}
+                            onChange={(e) => setGoalAmount(e.target.value)}
+                            className="theme-text-base"
+                        />
                     </List>
-                    <div className="rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden">
+                    <div className="rounded-2xl theme-bg-card border theme-border overflow-hidden">
                         <button
                             onClick={() => setIsUnitSheetOpen(true)}
                             className="w-full h-full px-4 py-2 text-left flex flex-col justify-center"
                         >
-                            <span className="text-xs text-gray-500 mb-0.5">Unit</span>
+                            <span className="text-xs theme-text-muted mb-0.5">Unit</span>
                             <div className="flex items-center justify-between">
-                                <span className="text-base">{goalUnit}</span>
-                                <ChevronDown size={18} className="text-gray-400" />
+                                <span className="text-base theme-text-base">{goalUnit}</span>
+                                <ChevronDown size={18} className="theme-text-muted" />
                             </div>
                         </button>
                     </div>
                 </div>
 
-                {/* TIME RANGE */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <List strongIos className="!m-0 rounded-2xl bg-gray-50 border border-gray-100">
-                        <ListInput label="Start" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-                    </List>
-                    <List strongIos className="!m-0 rounded-2xl bg-gray-50 border border-gray-100">
-                        <ListInput label="End" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-                    </List>
+                {/* Time Type Selector */}
+                <div className="mb-4">
+                    <p className="text-sm theme-text-muted mb-2 font-medium ml-1">Time Settings</p>
+                    <Segmented rounded strong className="theme-bg-card border theme-border">
+                        <SegmentedButton
+                            active={isAllDay}
+                            onClick={() => setIsAllDay(true)}
+                            className={isAllDay ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                        >
+                            All Day
+                        </SegmentedButton>
+                        <SegmentedButton
+                            active={!isAllDay}
+                            onClick={() => setIsAllDay(false)}
+                            className={!isAllDay ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                        >
+                            Specific Time
+                        </SegmentedButton>
+                    </Segmented>
                 </div>
 
+                {!isAllDay && (
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                        <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
+                            <ListInput
+                                label="Start"
+                                type="time"
+                                value={startTime}
+                                onChange={(e) => setStartTime(e.target.value)}
+                                className="theme-text-base"
+                            />
+                        </List>
+                        <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
+                            <ListInput
+                                label="End"
+                                type="time"
+                                value={endTime}
+                                onChange={(e) => setEndTime(e.target.value)}
+                                className="theme-text-base"
+                            />
+                        </List>
+                    </div>
+                )}
+
                 <Block className="!px-0 !my-2">
-                    {/* RECURRENCE TYPE */}
                     <div className="my-4">
-                        <Segmented rounded strong>
+                        <p className="text-sm theme-text-muted mb-2 font-medium ml-1">Recurrence</p>
+                        <Segmented rounded strong className="theme-bg-card border theme-border">
                             <SegmentedButton
                                 active={recurrenceEndType === 'none'}
                                 onClick={() => setRecurrenceEndType('none')}
+                                className={recurrenceEndType === 'none' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
                             >
                                 One Time
                             </SegmentedButton>
                             <SegmentedButton
                                 active={recurrenceEndType !== 'none'}
                                 onClick={() => setRecurrenceEndType('never')}
+                                className={recurrenceEndType !== 'none' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
                             >
                                 Recurring
                             </SegmentedButton>
                         </Segmented>
                     </div>
 
-                    {/* RECURRENCE DETAILS (If Recurring) */}
                     {recurrenceEndType !== 'none' && (
                         <>
-                            {/* WEEKLY/MONTHLY/YEARLY SEGMENTS */}
                             <div className="mb-4">
-                                <Segmented rounded strong>
-                                    <SegmentedButton active={repeatFrequency === 'week'} onClick={() => setRepeatFrequency('week')}>Weekly</SegmentedButton>
-                                    <SegmentedButton active={repeatFrequency === 'month'} onClick={() => setRepeatFrequency('month')}>Monthly</SegmentedButton>
-                                    <SegmentedButton active={repeatFrequency === 'year'} onClick={() => setRepeatFrequency('year')}>Yearly</SegmentedButton>
+                                <Segmented rounded strong className="theme-bg-card border theme-border">
+                                    <SegmentedButton
+                                        active={repeatFrequency === 'week'}
+                                        onClick={() => setRepeatFrequency('week')}
+                                        className={repeatFrequency === 'week' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                                    >
+                                        Weekly
+                                    </SegmentedButton>
+                                    <SegmentedButton
+                                        active={repeatFrequency === 'month'}
+                                        onClick={() => setRepeatFrequency('month')}
+                                        className={repeatFrequency === 'month' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                                    >
+                                        Monthly
+                                    </SegmentedButton>
+                                    <SegmentedButton
+                                        active={repeatFrequency === 'year'}
+                                        onClick={() => setRepeatFrequency('year')}
+                                        className={repeatFrequency === 'year' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                                    >
+                                        Yearly
+                                    </SegmentedButton>
                                 </Segmented>
                             </div>
 
-                            {/* WEEKLY REPEAT DAYS */}
                             {repeatFrequency === 'week' && (
                                 <div className="flex gap-1 justify-between mb-4">
                                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                                        <button key={i} onClick={() => toggleDay(i)}
-                                            className={`w-14 h-10 rounded-xl text-sm font-bold transition-colors ${repeatDays.includes(i) ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                        <button
+                                            key={i}
+                                            onClick={() => toggleDay(i)}
+                                            className={`w-14 h-10 rounded-xl text-sm font-bold transition-colors border ${
+                                                repeatDays.includes(i)
+                                                    ? 'theme-bg-gray text-white theme-border'
+                                                    : 'theme-bg-card theme-text-muted theme-border'
+                                            }`}
+                                        >
                                             {d}
                                         </button>
                                     ))}
                                 </div>
                             )}
 
-                            {/* REPEAT EVERY INPUT */}
                             <div className="mb-4">
-                                <List strongIos className="!m-0 rounded-2xl bg-gray-50 border border-gray-100">
+                                <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
                                     <ListInput
                                         label={`Repeat every (${repeatFrequency}s)`}
                                         type="number"
                                         min="1"
                                         value={repeatEvery}
                                         onChange={(e) => setRepeatEvery(e.target.value)}
+                                        className="theme-text-base"
                                     />
                                 </List>
                             </div>
 
-                            {/* ENDS SEGMENTS */}
-                            <p className="text-sm text-gray-500 mb-2 font-medium ml-1 mt-4">Ends</p>
+                            <p className="text-sm theme-text-muted mb-2 font-medium ml-1 mt-4">Ends</p>
                             <div className="mb-4">
-                                <Segmented rounded strong>
-                                    <SegmentedButton active={recurrenceEndType === 'never'} onClick={() => setRecurrenceEndType('never')}>Never</SegmentedButton>
-                                    <SegmentedButton active={recurrenceEndType === 'on_date'} onClick={() => setRecurrenceEndType('on_date')}>On Date</SegmentedButton>
+                                <Segmented rounded strong className="theme-bg-card border theme-border">
+                                    <SegmentedButton
+                                        active={recurrenceEndType === 'never'}
+                                        onClick={() => setRecurrenceEndType('never')}
+                                        className={recurrenceEndType === 'never' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                                    >
+                                        Never
+                                    </SegmentedButton>
+                                    <SegmentedButton
+                                        active={recurrenceEndType === 'on_date'}
+                                        onClick={() => setRecurrenceEndType('on_date')}
+                                        className={recurrenceEndType === 'on_date' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                                    >
+                                        On Date
+                                    </SegmentedButton>
                                 </Segmented>
                             </div>
 
-                            {/* START/END DATE INPUTS */}
                             <div className="flex flex-row gap-4">
-                                <List
-                                    strongIos
-                                    className="!m-0 rounded-2xl bg-gray-50 border border-gray-100 flex-1"
-                                >
-                                    <ListInput label="Start Date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                                <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border flex-1">
+                                    <ListInput
+                                        label="Start Date"
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="theme-text-base"
+                                    />
                                 </List>
 
                                 {recurrenceEndType === 'on_date' && (
-                                    <List
-                                        strongIos
-                                        className="!m-0 rounded-2xl bg-gray-50 border border-gray-100 flex-1"
-                                    >
-                                        <ListInput label="End Date" type="date" value={endDateInput} onChange={(e) => setEndDateInput(e.target.value)} min={startDate} />
+                                    <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border flex-1">
+                                        <ListInput
+                                            label="End Date"
+                                            type="date"
+                                            value={endDateInput}
+                                            onChange={(e) => setEndDateInput(e.target.value)}
+                                            className="theme-text-base"
+                                        />
                                     </List>
                                 )}
                             </div>
@@ -360,49 +616,98 @@ export default function EditEventPage() {
                     )}
                 </Block>
 
-                {/* SAVE BUTTON */}
-                <div className="mt-8">
-                    <Button large rounded className="bg-black text-white" onClick={handleSave}>Save Changes</Button>
+                <div className="mt-8 flex flex-row gap-4">
+                    <Button
+                        large
+                        rounded
+                        className="theme-bg-secondary theme-text-gray font-bold"
+                        onClick={() => navigate(-1)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        large
+                        rounded
+                        className="theme-bg-primary theme-text-gray border theme-border font-bold"
+                        onClick={handleEditAttempt}
+                    >
+                        Save Changes
+                    </Button>
                 </div>
             </div>
 
             {/* ICON PICKER SHEET */}
-            <Sheet opened={isIconSheetOpen} onBackdropClick={() => setIsIconSheetOpen(false)} className="pb-safe">
-                <Block className="!mt-0 pt-4">
-                    <p className="text-xl font-bold mb-4 text-center">Choose Icon</p>
-                    <div className="grid grid-cols-5 gap-3">
-                        {HabitIcons.map((iconName) => {
-                            const I = LucideIcons[iconName as keyof typeof LucideIcons] as React.ElementType;
-                            return (
-                                <button key={iconName} onClick={() => { setIcon(iconName); setIsIconSheetOpen(false); }}
-                                    className="w-full aspect-square rounded-xl flex items-center justify-center bg-gray-50 hover:bg-gray-200">
-                                    {I ? <I size={24} /> : null}
-                                </button>
-                            )
-                        })}
-                    </div>
-                    <Button large onClick={() => setIsIconSheetOpen(false)} className="mt-4">
+            <Sheet
+                opened={isIconSheetOpen}
+                onBackdropClick={() => setIsIconSheetOpen(false)}
+                className="pb-safe theme-bg-base"
+            >
+                <Block className="!mt-0 pt-4 max-h-[70vh] overflow-y-auto">
+                    <p className="text-xl font-bold mb-4 text-center theme-text-base">Choose Icon</p>
+                    
+                    {Object.entries(ICON_CATEGORIES).map(([category, icons]) => (
+                        <div key={category} className="mb-4">
+                            <p className="text-[10px] font-semibold theme-text-muted uppercase tracking-wider mb-2 px-1">
+                                {category}
+                            </p>
+                            <div className="rounded-2xl theme-bg-card border theme-border p-2">
+                                <div className="grid grid-cols-10 gap-1">
+                                    {icons.map((iconName) => {
+                                        const I = LucideIcons[iconName as keyof typeof LucideIcons] as React.ElementType;
+                                        const isSelected = icon === iconName;
+                                        return (
+                                            <button
+                                                key={iconName}
+                                                onClick={() => { setIcon(iconName); setIsIconSheetOpen(false); }}
+                                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                                    isSelected 
+                                                        ? 'theme-bg-gray text-white' 
+                                                        : 'hover:theme-bg-secondary theme-text-base'
+                                                }`}
+                                            >
+                                                {I ? <I size={16} /> : null}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    
+                    <Button
+                        large
+                        rounded
+                        onClick={() => setIsIconSheetOpen(false)}
+                        className="mt-4 theme-bg-secondary theme-text-gray font-bold"
+                    >
                         Close
                     </Button>
                 </Block>
             </Sheet>
 
             {/* UNIT PICKER SHEET */}
-            <Sheet opened={isUnitSheetOpen} onBackdropClick={() => setIsUnitSheetOpen(false)} className="pb-safe">
+            <Sheet
+                opened={isUnitSheetOpen}
+                onBackdropClick={() => setIsUnitSheetOpen(false)}
+                className="pb-safe theme-bg-base"
+            >
                 <Block className="!mt-0 pt-4 max-h-[70vh] overflow-y-auto">
-                    <p className="text-xl font-bold mb-4 text-center">Choose Unit</p>
+                    <p className="text-xl font-bold mb-4 text-center theme-text-base">Choose Unit</p>
                     {Object.entries(UNIT_PRESETS).map(([category, units]) => (
                         <div key={category} className="mb-4">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">{category}</p>
+                            <p className="text-xs font-semibold theme-text-muted uppercase tracking-wide mb-2 px-1">
+                                {category}
+                            </p>
                             <div className="flex flex-wrap gap-2">
                                 {units.map((unit) => (
                                     <button
                                         key={unit}
                                         onClick={() => { setGoalUnit(unit); setIsUnitSheetOpen(false); }}
-                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${goalUnit === unit
-                                                ? 'bg-black text-white'
-                                                : 'bg-gray-100 text-gray-700 active:bg-gray-200'
-                                            }`}
+                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all border theme-border ${
+                                            goalUnit === unit
+                                                ? 'theme-bg-gray text-white'
+                                                : 'theme-bg-card theme-text-base active:theme-bg-secondary'
+                                        }`}
                                     >
                                         {unit}
                                     </button>
@@ -410,23 +715,71 @@ export default function EditEventPage() {
                             </div>
                         </div>
                     ))}
-                    <Button large onClick={() => setIsUnitSheetOpen(false)} className="mt-4">
+                    <Button
+                        large
+                        rounded
+                        onClick={() => setIsUnitSheetOpen(false)}
+                        className="mt-4 theme-bg-secondary theme-text-gray font-bold"
+                    >
                         Close
                     </Button>
                 </Block>
             </Sheet>
 
-            {/* DELETE CONFIRMATION SHEET */}
-            <Sheet opened={isDeleteSheetOpen} onBackdropClick={() => setIsDeleteSheetOpen(false)} className="pb-safe">
+            {/* EDIT CONFIRMATION SHEET */}
+            <Sheet opened={isEditSheetOpen} onBackdropClick={() => setIsEditSheetOpen(false)} className="pb-safe theme-bg-base">
                 <Block className="!mt-0 pt-8 pb-4">
-                    <p className="text-xl font-bold mb-6 text-center">Delete Habit</p>
+                    <p className="text-xl font-bold mb-6 text-center theme-text-base">Save Changes</p>
+
+                    <Button
+                        large
+                        rounded
+                        className="mb-3 theme-bg-card theme-text-base border theme-border font-bold"
+                        onClick={handleSaveInstance}
+                    >
+                        This event only
+                    </Button>
+
+                    <Button
+                        large
+                        rounded
+                        className="mb-3 theme-bg-card theme-text-base border theme-border font-bold"
+                        onClick={handleSaveFollowing}
+                    >
+                        This and all following
+                    </Button>
+
+                    <Button
+                        large
+                        rounded
+                        className="mb-3 theme-bg-primary theme-text-gray border theme-border font-bold"
+                        onClick={handleSaveAll}
+                    >
+                        All events
+                    </Button>
+
+                    <Button
+                        large
+                        rounded
+                        className="mt-3 theme-bg-secondary theme-text-gray font-bold"
+                        onClick={() => setIsEditSheetOpen(false)}
+                    >
+                        Cancel
+                    </Button>
+                </Block>
+            </Sheet>
+
+            {/* DELETE CONFIRMATION SHEET */}
+            <Sheet opened={isDeleteSheetOpen} onBackdropClick={() => setIsDeleteSheetOpen(false)} className="pb-safe theme-bg-base">
+                <Block className="!mt-0 pt-8 pb-4">
+                    <p className="text-xl font-bold mb-6 text-center theme-text-base">Delete Habit</p>
 
                     {isRecurring && instanceDate && (
                         <>
                             <Button
                                 large
                                 rounded
-                                className="mb-3 bg-red-100 text-red-600 border border-red-300"
+                                className="mb-3 bg-red-100 text-red-600 border border-red-300 font-bold"
                                 onClick={() => handleMainDelete('instance')}
                             >
                                 Delete this only
@@ -435,7 +788,7 @@ export default function EditEventPage() {
                             <Button
                                 large
                                 rounded
-                                className="mb-3 bg-red-100 text-red-600 border border-red-300"
+                                className="mb-3 bg-red-100 text-red-600 border border-red-300 font-bold"
                                 onClick={() => handleMainDelete('future')}
                             >
                                 Delete this and all following
@@ -446,7 +799,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className={`text-white ${isRecurring && instanceDate ? 'bg-red-500/80 mt-2' : 'bg-red-500'}`}
+                        className={`text-white font-bold ${isRecurring && instanceDate ? 'bg-red-500/80 mt-2' : 'bg-red-500'}`}
                         onClick={() => handleMainDelete('all')}
                     >
                         Delete all
@@ -455,7 +808,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className="mt-3 bg-gray-300 text-black"
+                        className="mt-3 theme-bg-secondary theme-text-gray font-bold"
                         onClick={() => setIsDeleteSheetOpen(false)}
                     >
                         Cancel
