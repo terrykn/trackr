@@ -6,7 +6,6 @@ import { ChevronDown, Pencil } from 'lucide-react';
 import { saveEvent, PALE_COLORS } from '../utils';
 import type { HabitEvent, RepeatFrequency } from '../utils';
 
-// Icons organized by category
 const ICON_CATEGORIES = {
   'HEALTH & FITNESS': [
     'Dumbbell', 'Heart', 'Droplet', 'Apple', 'Pill', 'Activity', 'Footprints', 'Bike', 'PersonStanding', 'Salad'
@@ -30,9 +29,6 @@ const ICON_CATEGORIES = {
     'Users', 'MessageCircle', 'Phone', 'Mail', 'Heart', 'Gift', 'PartyPopper', 'Handshake', 'UserPlus', 'Share2'
   ],
 };
-
-// Flat list of all icons for default
-const HabitIcons = Object.values(ICON_CATEGORIES).flat();
 
 // Preset units organized by category
 const UNIT_PRESETS = {
@@ -81,51 +77,51 @@ export default function CreateEventPage() {
     setRepeatDays(prev => prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i].sort());
   };
 
-const handleSave = () => {
+  const handleSave = () => {
     if (!name || name.trim().length === 0) {
-        alert('Please enter a name for your habit before creating it.');
-        return;
+      alert('Please enter a name for your habit before creating it.');
+      return;
     }
 
     let finalEndDate: string | undefined;
 
     if (recurrenceEndType === 'never') {
-        finalEndDate = NEVER_END_DATE;
+      finalEndDate = NEVER_END_DATE;
     } else if (recurrenceEndType === 'on_date') {
-        // Save as date string without time
-        finalEndDate = endDateInput; // This is already in YYYY-MM-DD format
+      // Save as date string without time
+      finalEndDate = endDateInput; // This is already in YYYY-MM-DD format
     } else if (recurrenceEndType === 'none') {
-        // For one-time events, end date should be the same as start date
-        finalEndDate = startDate; // This is already in YYYY-MM-DD format
+      // For one-time events, end date should be the same as start date
+      finalEndDate = startDate; // This is already in YYYY-MM-DD format
     }
 
     const isSingleDay = recurrenceEndType === 'none';
     const newId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
 
     const habitEvent: HabitEvent = {
-        id: newId,
-        name: name.trim(),
-        icon, 
-        color,
-        goalAmount: parseInt(goalAmount) || 0, 
-        goalUnit,
-        isAllDay,
-        repeatDays: isSingleDay ? [] : repeatDays,
-        repeatEvery: isSingleDay ? 1 : (parseInt(repeatEvery) || 1),
-        repeatFrequency: isSingleDay ? 'day' as RepeatFrequency : repeatFrequency,
-        startDate: startDate, // Already in YYYY-MM-DD format
-        endDate: finalEndDate,
+      id: newId,
+      name: name.trim(),
+      icon,
+      color,
+      goalAmount: parseInt(goalAmount) || 0,
+      goalUnit,
+      isAllDay,
+      repeatDays: isSingleDay ? [] : repeatDays,
+      repeatEvery: isSingleDay ? 1 : (parseInt(repeatEvery) || 1),
+      repeatFrequency: isSingleDay ? 'day' as RepeatFrequency : repeatFrequency,
+      startDate: startDate, // Already in YYYY-MM-DD format
+      endDate: finalEndDate,
     };
 
     // Only add time fields if not all-day
     if (!isAllDay) {
-        habitEvent.startTime = startTime;
-        habitEvent.endTime = endTime;
+      habitEvent.startTime = startTime;
+      habitEvent.endTime = endTime;
     }
 
     saveEvent(habitEvent);
     navigate('/');
-};
+  };
 
   function addDays(date: Date, days: number): Date {
     const result = new Date(date);
@@ -135,7 +131,17 @@ const handleSave = () => {
 
   return (
     <Page className="theme-bg-base">
-      <div className="px-4 pb-20 pt-8">
+      <div className="flex items-center justify-between px-4 py-3">
+        <Button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-full theme-bg-secondary theme-border-mute border theme-text-gray"
+        >
+          <LucideIcons.ArrowLeft size={24} />
+        </Button>
+        <span className="text-lg font-semibold tracking-wide theme-text-base">Create Event</span>
+        <Button clear className="w-10 h-10"></Button>
+      </div>
+      <div className="px-4 pb-20 pt-6">
         {/* Icon with pencil edit badge */}
         <div className="flex gap-4 justify-center mb-6">
           <div className="relative">
@@ -304,8 +310,8 @@ const handleSave = () => {
                       key={i}
                       onClick={() => toggleDay(i)}
                       className={`w-14 h-10 rounded-xl text-sm font-bold transition-colors border ${repeatDays.includes(i)
-                          ? 'theme-bg-gray text-white theme-border'
-                          : 'theme-bg-card theme-text-muted theme-border'
+                        ? 'theme-bg-gray text-white theme-border'
+                        : 'theme-bg-card theme-text-muted theme-border'
                         }`}
                     >
                       {d}
@@ -408,7 +414,7 @@ const handleSave = () => {
       >
         <Block className="!mt-0 pt-4 max-h-[70vh] overflow-y-auto">
           <p className="text-xl font-bold mb-4 text-center theme-text-base">Choose Icon</p>
-          
+
           {Object.entries(ICON_CATEGORIES).map(([category, icons]) => (
             <div key={category} className="mb-4">
               <p className="text-[10px] font-semibold theme-text-muted uppercase tracking-wider mb-2 px-1">
@@ -423,11 +429,10 @@ const handleSave = () => {
                       <button
                         key={iconName}
                         onClick={() => { setIcon(iconName); setIsIconSheetOpen(false); }}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                          isSelected 
-                            ? 'theme-bg-gray text-white' 
-                            : 'hover:theme-bg-secondary theme-text-base'
-                        }`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isSelected
+                          ? 'theme-bg-gray text-white'
+                          : 'hover:theme-bg-secondary theme-text-base'
+                          }`}
                       >
                         {I ? <I size={16} /> : null}
                       </button>
@@ -437,7 +442,7 @@ const handleSave = () => {
               </div>
             </div>
           ))}
-          
+
           <Button
             large
             rounded
@@ -468,8 +473,8 @@ const handleSave = () => {
                     key={unit}
                     onClick={() => { setGoalUnit(unit); setIsUnitSheetOpen(false); }}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all border theme-border ${goalUnit === unit
-                        ? 'theme-bg-gray text-white'
-                        : 'theme-bg-card theme-text-base active:theme-bg-secondary'
+                      ? 'theme-bg-gray text-white'
+                      : 'theme-bg-card theme-text-base active:theme-bg-secondary'
                       }`}
                   >
                     {unit}

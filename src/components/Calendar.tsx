@@ -285,7 +285,7 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                 <div className="flex items-center">
                     <div
                         ref={sliderRef}
-                        className={`progress-area relative flex-1 h-10 bg-black/5 rounded-2xl overflow-hidden cursor-ew-resize touch-none select-none transition-transform duration-150 origin-center
+                        className={`progress-area relative flex-1 h-10 theme-bg-secondary border theme-border rounded-2xl overflow-hidden cursor-ew-resize touch-none select-none transition-transform duration-150 origin-center
                             ${isDragging ? 'scale-y-[1.12]' : ''}
                         `}
                         onMouseDown={handleStart}

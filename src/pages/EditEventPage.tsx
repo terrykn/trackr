@@ -363,21 +363,22 @@ export default function EditEventPage() {
     return (
         <Page className="theme-bg-base">
             <div className="flex items-center justify-between px-4 py-3">
-                <button 
+                <Button 
                     onClick={() => navigate(-1)} 
-                    className="w-10 h-10 rounded-full theme-bg-card theme-border border flex items-center justify-center theme-text-base active:scale-95 transition-all"
+                    className="w-10 h-10 rounded-full theme-bg-secondary theme-border-mute border theme-text-gray"
                 >
                     <ArrowLeft size={24} />
-                </button>
-                <button 
+                </Button>
+                <span className="text-lg font-semibold tracking-wide theme-text-base">Edit Event</span>
+                <Button 
                     onClick={() => setIsDeleteSheetOpen(true)} 
-                    className="w-10 h-10 rounded-full theme-bg-card theme-border border flex items-center justify-center text-red-500 active:scale-95 transition-all"
+                    className="w-10 h-10 rounded-full theme-bg-secondary theme-border-mute border text-red-600"
                 >
                     <Trash2 size={24} />
-                </button>
+                </Button>
             </div>
 
-            <div className="px-4 pb-20 pt-4">
+            <div className="px-4 pb-20 pt-3">
                 {/* Icon with pencil edit badge */}
                 <div className="flex gap-4 justify-center mb-6">
                     <div className="relative">

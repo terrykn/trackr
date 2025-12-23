@@ -30,8 +30,7 @@ export default function HomePage() {
                 {/* Left: View Mode Toggle */}
                 <div className="flex-1 flex justify-start">
                     <Button
-                        clear
-                        className="w-11 h-9 rounded-2xl theme-text-gray theme-bg-secondary border theme-border-mute"
+                        className="w-10 h-10 rounded-full theme-bg-secondary theme-border-mute border theme-text-gray"
                         onClick={toggleViewMode}
                     >
                         {ViewModeIcon}
@@ -48,9 +47,8 @@ export default function HomePage() {
                 {/* Right: Add Button */}
                 <div className="flex-1 flex justify-end">
                     <Button
-                        clear
                         onClick={() => navigate('/create')}
-                        className="w-11 h-9 rounded-2xl theme-text-gray theme-bg-secondary border theme-border-mute"
+                        className="w-10 h-10 rounded-full theme-bg-secondary theme-border-mute border theme-text-gray"
                     >
                         <Plus size={20} strokeWidth={2} />
                     </Button>
