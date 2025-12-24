@@ -7,7 +7,7 @@ import {
     parseISO, isWithinInterval, getDay, differenceInCalendarWeeks,
     differenceInCalendarMonths, differenceInCalendarYears
 } from 'date-fns';
-import { getEvents, getProgressPercent, isDateDeleted, updateEventProgress, getEventProgress } from '../utils';
+import { getEvents, getProgressPercent, isDateDeleted, updateEventProgress, getEventProgress, isDailyCompletionMet } from '../utils';
 import type { HabitEvent } from '../utils';
 
 const useSwipe = (onSwipeLeft: () => void, onSwipeRight: () => void) => {
@@ -125,24 +125,27 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
     const swipeHandlers = useSwipe(
-        () => onDateChange(addDays(currentDate, 7)), // Left swipe = Next week
-        () => onDateChange(subDays(currentDate, 7))  // Right swipe = Prev week
+        () => onDateChange(addDays(currentDate, 7)), 
+        () => onDateChange(subDays(currentDate, 7))
     );
 
     return (
         <div
-            className="pb-2 px-4 theme-bg-base border-b theme-border select-none"
+            className="pb-2 pt-3 px-4 theme-bg-base border-b theme-border select-none"
             {...swipeHandlers}
         >
             <div className="flex justify-between items-center gap-1">
                 {weekDays.map((date) => {
                     const isSelected = isSameDay(date, currentDate);
                     const isToday = isSameDay(date, new Date());
+                    // Check if streak exists for this specific day
+                    const hasStreak = isDailyCompletionMet(date);
+
                     return (
                         <button
                             key={date.toString()}
                             onClick={() => onDateChange(date)}
-                            className={`flex flex-col items-center justify-center w-11 h-14 rounded-2xl transition-all active:scale-95
+                            className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-2xl transition-all
                                 ${isSelected
                                     ? 'theme-bg-primary theme-border theme-text-gray border'
                                     : isToday
@@ -150,10 +153,17 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
                                         : 'border-transparent theme-text-gray'
                                 }`}
                         >
+                            {hasStreak && (
+                                <div className="absolute -top-3">
+                                    <LucideIcons.Check size={12} className="text-green-500" />
+                                </div>
+                            )}
                             <span className="text-[9px] font-semibold uppercase mb-0.5">
                                 {format(date, 'EEE')}
                             </span>
-                            <span className="text-lg font-bold">{format(date, 'd')}</span>
+                            <span className="text-lg font-bold leading-none">{format(date, 'd')}</span>
+
+                            
                         </button>
                     );
                 })}
@@ -427,19 +437,29 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
 
                 {days.map(d => {
                     const isToday = isSameDay(d, new Date());
+                    // Check if streak exists for this specific day
+                    const hasStreak = isDailyCompletionMet(d);
+
                     return (
                         <div
                             key={d.toString()}
-                            className="text-center pb-1 pt-1 min-w-0 cursor-pointer transition-colors active:opacity-60"
+                            className="text-center pb-1 pt-1 min-w-0 cursor-pointer transition-colors active:opacity-60 flex flex-col items-center"
                             onClick={() => onDateChange(d)}
                         >
                             <div className="text-[9px] font-semibold uppercase">
                                 {format(d, 'EEE')}
                             </div>
-                            <div className={`text-md font-bold w-8 h-8 flex items-center justify-center mx-auto rounded-full transition-all
+                            <div className={`text-md font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all relative
                                 ${isToday ? 'theme-bg-secondary theme-text-base' : 'theme-text-base'}`}
                             >
                                 {format(d, 'd')}
+                                
+                                {/* Fire Icon for Streak - positioned absolute to the circle */}
+                                {hasStreak && (
+                                    <div className="absolute -bottom-1.5">
+                                        <LucideIcons.Check size={12}  />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );

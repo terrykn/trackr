@@ -1,8 +1,14 @@
 import {
-    format, addDays, subDays, startOfWeek
+    format, addDays, subDays, startOfWeek, isToday
 } from 'date-fns';
 import { useMemo } from 'react';
-import { doesEventOccurOnDate, getEventProgress, getEvents, isDateDeleted } from '../utils';
+import { 
+    doesEventOccurOnDate, 
+    getEventProgress, 
+    getEvents, 
+    isDateDeleted, 
+    isDailyCompletionMet 
+} from '../utils';
 
 export default function WeeklySummaryCard({ currentDate }: { currentDate: Date }) {
     const start = startOfWeek(currentDate, { weekStartsOn: 0 });
@@ -14,6 +20,7 @@ export default function WeeklySummaryCard({ currentDate }: { currentDate: Date }
         let totalTasks = 0;
         let completedTasks = 0;
 
+        // 1. Calculate Weekly Stats
         weekDays.forEach(day => {
             const dateISO = format(day, 'yyyy-MM-dd');
 
@@ -31,39 +38,30 @@ export default function WeeklySummaryCard({ currentDate }: { currentDate: Date }
 
         const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-        // Calculate current streak
+        // 2. Calculate Current Streak using the utility function
         let currentStreak = 0;
-        let checkDate = new Date();
+        let checkDate = new Date(); // Start from "Today"
         checkDate.setHours(0, 0, 0, 0);
 
         while (true) {
-            const dateISO = format(checkDate, 'yyyy-MM-dd');
+            const isMet = isDailyCompletionMet(checkDate);
 
-            const tasksForDay = allEvents
-                .filter(e => doesEventOccurOnDate(e, checkDate))
-                .filter(e => !isDateDeleted(e.id, dateISO));
-
-            if (tasksForDay.length === 0) {
-                checkDate = subDays(checkDate, 1);
-                if (currentStreak === 0 && checkDate < subDays(new Date(), 7)) {
-                    break;
-                }
-                continue;
-            }
-
-            const allCompleted = tasksForDay.every(event => {
-                const progress = getEventProgress(event.id, dateISO);
-                return progress >= event.goalAmount;
-            });
-
-            if (allCompleted) {
+            if (isMet) {
                 currentStreak++;
                 checkDate = subDays(checkDate, 1);
             } else {
+                // If it's today and we haven't finished yet, don't break the streak,
+                // just move to yesterday to see if the streak is still alive.
+                if (isToday(checkDate)) {
+                    checkDate = subDays(checkDate, 1);
+                    continue;
+                }
+                // If it's not today and tasks weren't met, the streak is broken.
                 break;
             }
 
-            if (currentStreak > 365) break;
+            // Safety break
+            if (currentStreak > 4000) break;
         }
 
         return { totalTasks, completedTasks, completionRate, currentStreak };

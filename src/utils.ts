@@ -327,6 +327,26 @@ export const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
     return true;
 };
 
+export const isDailyCompletionMet = (date: Date): boolean => {
+    const allEvents = getEvents(); // Assuming this retrieves your global list
+    
+    const dateISO = date.toISOString().split('T')[0];
+    const daysEvents = allEvents.filter(event => 
+        !isDateDeleted(event.id, dateISO) && doesEventOccurOnDate(event, date)
+    );
+
+    // If no habits are scheduled, it's not a "streak" day (change this logic if you prefer free days to count)
+    if (daysEvents.length === 0) return false;
+
+    // 2. Check if every single event is completed
+    const allCompleted = daysEvents.every(event => {
+        const progress = getEventProgress(event.id, dateISO);
+        return progress >= event.goalAmount;
+    });
+
+    return allCompleted;
+};
+
 export const lightenColor = (color: string, amount: number = 0.3): string => {
     let hex = color.replace('#', '');
     if (hex.length === 3) {

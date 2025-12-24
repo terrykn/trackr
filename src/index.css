@@ -26,20 +26,20 @@ html, body {
 }
 
 :root {
-    --color-brand-primary: #ffefa1;
-    --color-brand-secondary: #f1f1ef;
+    --color-brand-primary: #ffee81;
+    --color-brand-secondary: #f1f1f1;
     --color-brand-accent: #964319;
     --color-brand-gray: #332929;
     --color-brand-light-gray: #cacaca;
 
-    --color-bg-base: #fafafa;
+    --color-bg-base: #fcfcfc;
     --color-bg-card: #ffffff;
     --color-bg-light-gray: #f9f9f9;
 
     --color-text-base: #222222;
     --color-text-muted: #858585;
 
-    --color-border: #212121;
+    --color-border: #dedede;
     --color-border-mute: #f6f1ef;
 }
 
