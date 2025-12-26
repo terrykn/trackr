@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Page, Sheet, Block, Button, Card, List, ListItem } from "konsta/react";
+import { Page, Sheet, Block, Button } from "konsta/react";
 import { Play, Pause, RotateCcw, Square, Plus, X } from 'lucide-react';
 import BottomNav from "../components/BottomNav";
 import { getEvents, updateEventProgress, getEventProgress, lightenColor, darkenColor } from '../utils';

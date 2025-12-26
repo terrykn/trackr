@@ -2,14 +2,15 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Sunrise, Sun, Moon, Calendar as CalendarIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { Card, List, Navbar } from 'konsta/react';
+import { List } from 'konsta/react';
 import {
     format, addDays, subDays, startOfWeek, isSameDay,
     parseISO, isWithinInterval, getDay, differenceInCalendarWeeks,
     differenceInCalendarMonths, differenceInCalendarYears
 } from 'date-fns';
-import { getEvents, getProgressPercent, isDateDeleted, updateEventProgress, getEventProgress, isDailyCompletionMet } from '../utils';
+import { getEvents, getProgressPercent, isDateDeleted, updateEventProgress, getEventProgress } from '../utils';
 import type { HabitEvent } from '../utils';
+import { lightenColor } from '../utils';
 
 const useSwipe = (onSwipeLeft: () => void, onSwipeRight: () => void) => {
     const touchStart = useRef<number | null>(null);
@@ -86,39 +87,6 @@ const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
     }
 
     return true;
-};
-
-// Helper to darken color
-const darkenColor = (color: string, amount: number = 0.3): string => {
-    const hex = color.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-
-    const newR = Math.floor(r * (1 - amount));
-    const newG = Math.floor(g * (1 - amount));
-    const newB = Math.floor(b * (1 - amount));
-
-    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
-};
-
-const lightenColor = (color: string, amount: number = 0.3): string => {
-    let hex = color.replace('#', '');
-    if (hex.length === 3) {
-        hex = hex.split('').map(char => char + char).join('');
-    }
-
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-
-    const newR = Math.min(255, Math.floor(r + (255 - r) * amount));
-    const newG = Math.min(255, Math.floor(g + (255 - g) * amount));
-    const newB = Math.min(255, Math.floor(b + (255 - b) * amount));
-
-    const toHex = (val: number) => val.toString(16).padStart(2, '0');
-
-    return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 };
 
 export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date, onDateChange: (d: Date) => void }) {
@@ -613,7 +581,7 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
 
     return (
         <div
-            className="h-full overflow-y-auto pb-27"
+            className="h-full overflow-y-auto pb-27 theme-bg-base"
             style={{ scrollbarGutter: 'stable' }}
         >
             {/* All-day events section */}
