@@ -1,7 +1,8 @@
 import { addDays, format, isSameDay, startOfWeek, subDays } from "date-fns";
 import { useMemo } from "react";
-import { darkenColor, doesEventOccurOnDate, getEventProgress, getEvents, isDateDeleted, type TaskWithCompletion } from "../utils";
+import { doesEventOccurOnDate, getEventProgress, getEvents, isDateDeleted, type TaskWithCompletion } from "../utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "konsta/react";
 import EventIcon from "./EventIcon";
 
 
@@ -39,23 +40,25 @@ export default function WeeklyCompletionChart({ currentDate, onDateChange }: { c
     const maxTasks = Math.max(...weekData.map(d => d.tasks.length), 1);
 
     return (
-        <div className="theme-bg-card rounded-2xl p-3.5 mx-4 mt-4 border theme-border">
+        <div className="rounded-2xl p-inner mx-screen mb-container theme-bg-card border theme-border">
             <div className="flex items-center justify-between mb-3">
-                <button
+                <Button
+                    clear
                     onClick={() => onDateChange(subDays(currentDate, 7))}
-                    className="p-1.5 theme-text-muted hover:text-black active:scale-95 transition-transform"
+                    className="w-8 theme-text-muted active:scale-95 transition-transform"
                 >
                     <ChevronLeft size={20} />
-                </button>
+                </Button>
                 <span className="text-base font-semibold theme-text-gray">
                     {format(start, 'MMM d')} - {format(addDays(start, 6), 'MMM d, yyyy')}
                 </span>
-                <button
+                <Button
+                    clear
                     onClick={() => onDateChange(addDays(currentDate, 7))}
-                    className="p-1.5 theme-text-muted hover:text-black active:scale-95 transition-transform"
+                    className="w-8 theme-text-muted active:scale-95 transition-transform"
                 >
                     <ChevronRight size={20} />
-                </button>
+                </Button>
             </div>
 
             <div className="flex justify-between items-end gap-1" style={{ minHeight: `${maxTasks * 32 + 40}px` }}>
@@ -71,10 +74,9 @@ export default function WeeklyCompletionChart({ currentDate, onDateChange }: { c
                                     tasks.map(({ event, isCompleted }) => (
                                         <div
                                             key={event.id}
-                                            className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${isCompleted ? 'theme-text-gray' : 'theme-bg-light-gray theme-border-mute text-gray-400'}`}
+                                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCompleted ? 'theme-text-gray' : 'theme-bg-light-gray theme-text-muted'}`}
                                             style={isCompleted ? {
                                                 backgroundColor: event.color,
-                                                borderColor: darkenColor(event.color, 0.3),
                                             } : undefined}
                                             title={`${event.name} - ${isCompleted ? 'Completed' : 'Incomplete'}`}
                                         >
@@ -84,11 +86,11 @@ export default function WeeklyCompletionChart({ currentDate, onDateChange }: { c
                                 )}
                             </div>
 
-                            <div className={`flex flex-col items-center ${isToday ? 'text-gray-900' : 'text-gray-500'}`}>
-                                <span className={`text-[10px] font-semibold uppercase ${isToday ? 'text-gray-900' : ''}`}>
+                            <div className={`flex flex-col items-center ${isToday ? 'theme-text-gray' : 'theme-text-muted'}`}>
+                                <span className={`text-[10px] font-semibold uppercase ${isToday ? 'theme-text-gray' : ''}`}>
                                     {format(date, 'EEE')}
                                 </span>
-                                <span className={`text-sm font-bold ${isToday ? 'text-gray-900' : ''}`}>
+                                <span className={`text-sm font-bold ${isToday ? 'theme-text-gray' : ''}`}>
                                     {format(date, 'd')}
                                 </span>
                             </div>

@@ -1,44 +1,64 @@
 import { Home, Clock, ChartNoAxesColumn } from "lucide-react"
 import { useLocation, useNavigate } from "react-router"
+import { Tabbar, TabbarLink, Icon, ToolbarPane } from "konsta/react"
 
 export default function BottomNav() {
     const { pathname } = useLocation()
     const navigate = useNavigate()
 
-    const tabs = [
-        { path: "/", icon: Home, label: "Home" },
-        { path: "/timer", icon: Clock, label: "Timer" },
-        { path: "/stats", icon: ChartNoAxesColumn, label: "Stats" },
-    ]
-
     return (
-        <nav className="fixed bottom-0 left-0 right-0 theme-bg-base border-t theme-border pb-safe z-50">
-            <div className="max-w-md mx-auto px-4">
-                <div className="flex items-center justify-around h-16">
-                    {tabs.map((tab) => {
-                        const Icon = tab.icon
-                        const isActive = pathname === tab.path
-                        
-                        return (
-                            <button
-                                key={tab.path}
-                                onClick={() => navigate(tab.path)}
-                                className={`flex flex-col items-center justify-center gap-1 px-5 py-2 rounded-2xl transition-all active:scale-95
-                                    ${isActive 
-                                        ? 'theme-bg-secondary border theme-border-mute' 
-                                        : 'hover:theme-bg-secondary'
-                                    }`}
-                            >
-                                <Icon 
-                                    size={24} 
-                                    className={isActive ? 'theme-text-gray' : 'theme-text-muted'}
-                                    strokeWidth={isActive ? 2 : 1.5}
+        <Tabbar
+            icons
+            labels
+            className="fixed left-0 bottom-0 right-0 z-20"
+        >
+            <ToolbarPane className="bg-white/50 max-w-xs h-16 mx-auto shadow-none border theme-border">
+                <TabbarLink
+                    active={pathname === '/'}
+                    onClick={() => navigate('/')}
+                    icon={
+                        <Icon
+                            ios={
+                                <Home
+                                    className="w-7 h-7"
+                                    strokeWidth={pathname === '/' ? 2 : 1.5}
                                 />
-                            </button>
-                        )
-                    })}
-                </div>
-            </div>
-        </nav>
+                            }
+                        />
+                    }
+                    label="Home"
+                />
+                <TabbarLink
+                    active={pathname === '/timer'}
+                    onClick={() => navigate('/timer')}
+                    icon={
+                        <Icon
+                            ios={
+                                <Clock
+                                    className="w-7 h-7"
+                                    strokeWidth={pathname === '/timer' ? 2 : 1.5}
+                                />
+                            }
+                        />
+                    }
+                    label="Focus"
+                />
+                <TabbarLink
+                    active={pathname === '/stats'}
+                    onClick={() => navigate('/stats')}
+                    icon={
+                        <Icon
+                            ios={
+                                <ChartNoAxesColumn
+                                    className="w-7 h-7"
+                                    strokeWidth={pathname === '/stats' ? 2 : 1.5}
+                                />
+                            }
+                        />
+                    }
+                    label="Stats"
+                />
+            </ToolbarPane>
+        </Tabbar>
     )
 }

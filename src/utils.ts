@@ -36,14 +36,13 @@ const COMPLETIONS_KEY = 'habit_tracker_completions';
 const DELETED_EXCEPTIONS_KEY = 'habit_deleted_exceptions';
 
 export const PALE_COLORS = [
-    '#FFD1DC', // Pastel Pink
-    '#FFDFD3', // Pastel Orange
-    '#FFFFD1', // Pastel Yellow
-    '#D7FFD9', // Pastel Green
-    '#D1EAFF', // Pastel Blue
-    '#E0D1FF', // Pastel Purple
-    '#F5F5F5', // Pastel Gray
-    '#FFD6C9', // Peach
+    '#ffa4b9ff', // Pastel Pink
+    '#ffbba2ff', // Pastel Orange
+    '#f8f876ff', // Pastel Yellow
+    '#9aff9fff', // Pastel Green
+    '#9fd4ffff', // Pastel Blue
+    '#c3a5ffff', // Pastel Purple
+    '#ff9df8ff', // Pastel Pink
 ];
 
 // --- EVENT CRUD (Modified) ---

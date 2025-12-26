@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Page } from "konsta/react";
+import { Page, Navbar } from "konsta/react";
 import BottomNav from "../components/BottomNav";
 import WeeklySummaryCard from '../components/WeeklySummaryCard';
 import WeeklyCompletionChart from '../components/WeeklyCompletionChart';
@@ -10,7 +10,13 @@ export default function StatsPage() {
 
     return (
         <Page className="flex flex-col min-h-screen theme-bg-base">
-            <div className="flex-1 overflow-y-auto pb-32 pt-4">
+            {/* Header with blur effect */}
+            <Navbar
+                title="Statistics"
+                className="!static"
+            />
+            
+            <div className="flex-1 overflow-y-auto pb-32 pt-3">
                 {/* Weekly Stats Summary */}
                 <WeeklySummaryCard currentDate={currentDate} />
 

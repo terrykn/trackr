@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Page, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton } from 'konsta/react';
+import { Page, List, ListInput, Block, Button, Sheet, Segmented, SegmentedButton, Navbar, NavbarBackLink } from 'konsta/react';
 import { useParams, useNavigate, useLocation } from 'react-router';
-import { ArrowLeft, Trash2, ChevronDown, Pencil } from 'lucide-react';
+import { Trash2, ChevronDown, Pencil } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { 
     getEventById, 
@@ -101,7 +101,7 @@ export default function EditEventPage() {
 
     const SelectedIcon = useMemo(() => {
         const I = LucideIcons[icon as keyof typeof LucideIcons] as React.ElementType;
-        return I ? <I size={36} strokeWidth={1} /> : null;
+        return I ? <I size={36} strokeWidth={1.5} /> : null;
     }, [icon]);
 
     // Determine if this is a recurring event
@@ -342,14 +342,10 @@ export default function EditEventPage() {
     if (isLoaded && !habitFound) {
         return (
             <Page className="theme-bg-base">
-                <div className="flex items-center justify-between px-4 py-3">
-                    <button 
-                        onClick={() => navigate(-1)} 
-                        className="w-10 h-10 rounded-full theme-bg-card theme-border border flex items-center justify-center theme-text-base active:scale-95 transition-all"
-                    >
-                        <ArrowLeft size={24} />
-                    </button>
-                </div>
+                <Navbar
+                    title="Edit Event"
+                    left={<NavbarBackLink onClick={() => navigate(-1)} />}
+                />
                 <Block>Habit not found.</Block>
             </Page>
         );
@@ -357,80 +353,81 @@ export default function EditEventPage() {
 
     return (
         <Page className="theme-bg-base">
-            <div className="flex items-center justify-between px-4 py-3">
-                <Button 
-                    onClick={() => navigate(-1)} 
-                    className="w-10 h-10 rounded-full theme-bg-secondary theme-border-mute border theme-text-gray"
-                >
-                    <ArrowLeft size={24} />
-                </Button>
-                <span className="text-lg font-semibold tracking-wide theme-text-base">Edit Event</span>
-                <Button 
-                    onClick={() => setIsDeleteSheetOpen(true)} 
-                    className="w-10 h-10 rounded-full theme-bg-secondary theme-border-mute border text-red-600"
-                >
-                    <Trash2 size={24} />
-                </Button>
-            </div>
+            <Navbar
+                title="Edit Event"
+                left={<NavbarBackLink onClick={() => navigate(-1)} />}
+                right={
+                    <button 
+                        onClick={() => setIsDeleteSheetOpen(true)} 
+                        className="p-2 text-red-600"
+                    >
+                        <Trash2 size={24} />
+                    </button>
+                }
+            />
 
-            <div className="px-4 pb-20 pt-3">
+            <div className="px-screen pb-20 pt-4">
                 {/* Icon with pencil edit badge */}
-                <div className="flex gap-4 justify-center mb-6">
+                <div className="flex gap-container justify-center mb-container">
                     <div className="relative">
                         <button
                             onClick={() => setIsIconSheetOpen(true)}
-                            className="w-20 h-20 rounded-2xl border theme-border flex items-center justify-center transition-transform hover:scale-105"
+                            className="w-20 h-20 rounded-2xl flex items-center justify-center transition-transform hover:scale-105 event-card-shadow"
                             style={{ backgroundColor: color }}
                         >
                             {SelectedIcon}
                         </button>
                         <button
                             onClick={() => setIsIconSheetOpen(true)}
-                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full theme-bg-gray theme-border border flex items-center justify-center"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full theme-bg-gray flex items-center justify-center"
                         >
                             <Pencil size={12} className="text-white" />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex justify-center gap-2 mb-6 flex-wrap px-4">
+                <div className="flex justify-center gap-2 mb-container flex-wrap">
                     {PALE_COLORS.map(c => (
                         <button
                             key={c}
                             onClick={() => setColor(c)}
-                            className={`w-8 h-8 rounded-full border transition-transform theme-border ${
-                                color === c ? 'scale-110 !border-2' : 'border-opacity-30'
+                            className={`w-8 h-8 rounded-full transition-transform event-card-shadow ${
+                                color === c ? 'scale-115 ring-2 ring-offset-2 ring-gray-400' : ''
                             }`}
                             style={{ backgroundColor: c }}
                         />
                     ))}
                 </div>
 
-                <List strongIos className="!m-0 !mb-4 rounded-2xl theme-bg-card border theme-border">
-                    <ListInput
-                        label="Name"
-                        type="text"
-                        placeholder="Drink water"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="theme-text-base"
-                    />
-                </List>
-
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
+                <div className="mb-container theme-bg-card rounded-2xl relative border theme-border overflow-hidden">
+                    <List strongIos className="!m-0">
                         <ListInput
-                            label="Goal"
-                            type="number"
-                            value={goalAmount}
-                            onChange={(e) => setGoalAmount(e.target.value)}
+                            label="Name"
+                            type="text"
+                            placeholder="Drink water"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             className="theme-text-base"
                         />
                     </List>
-                    <div className="rounded-2xl theme-bg-card border theme-border overflow-hidden">
+                </div>
+
+                <div className="grid grid-cols-2 gap-container mb-container">
+                    <div className="theme-bg-card rounded-2xl relative border theme-border overflow-hidden">
+                        <List strongIos className="!m-0">
+                            <ListInput
+                                label="Goal"
+                                type="number"
+                                value={goalAmount}
+                                onChange={(e) => setGoalAmount(e.target.value)}
+                                className="theme-text-base"
+                            />
+                        </List>
+                    </div>
+                    <div className="theme-bg-card rounded-2xl relative border theme-border overflow-hidden">
                         <button
                             onClick={() => setIsUnitSheetOpen(true)}
-                            className="w-full h-full px-4 py-2 text-left flex flex-col justify-center"
+                            className="w-full h-full px-3 py-2 text-left flex flex-col justify-center"
                         >
                             <span className="text-xs theme-text-muted mb-0.5">Unit</span>
                             <div className="flex items-center justify-between">
@@ -442,20 +439,20 @@ export default function EditEventPage() {
                 </div>
 
                 {/* Time Type Selector */}
-                <div className="mb-4">
-                    <p className="text-sm theme-text-muted mb-2 font-medium ml-1">Time Settings</p>
-                    <Segmented rounded strong className="theme-bg-card border theme-border">
+                <div className="mb-container">
+                    <p className="text-sm theme-text-muted mb-2 font-medium">Time Settings</p>
+                    <Segmented rounded strong className="theme-bg-card relative border theme-border">
                         <SegmentedButton
                             active={isAllDay}
                             onClick={() => setIsAllDay(true)}
-                            className={isAllDay ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                            className={isAllDay ? 'btn-primary' : 'theme-text-base'}
                         >
                             All Day
                         </SegmentedButton>
                         <SegmentedButton
                             active={!isAllDay}
                             onClick={() => setIsAllDay(false)}
-                            className={!isAllDay ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                            className={!isAllDay ? 'btn-primary' : 'theme-text-base'}
                         >
                             Specific Time
                         </SegmentedButton>
@@ -463,130 +460,135 @@ export default function EditEventPage() {
                 </div>
 
                 {!isAllDay && (
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
-                            <ListInput
-                                label="Start"
-                                type="time"
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
-                                className="theme-text-base"
-                            />
-                        </List>
-                        <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
-                            <ListInput
-                                label="End"
-                                type="time"
-                                value={endTime}
-                                onChange={(e) => setEndTime(e.target.value)}
-                                className="theme-text-base"
-                            />
-                        </List>
+                    <div className="grid grid-cols-2 gap-container mb-container">
+                        <div className="theme-bg-card rounded-2xl relative border theme-border overflow-hidden">
+                            <List strongIos className="!m-0">
+                                <ListInput
+                                    label="Start"
+                                    type="time"
+                                    value={startTime}
+                                    onChange={(e) => setStartTime(e.target.value)}
+                                    className="theme-text-base"
+                                />
+                            </List>
+                        </div>
+                        <div className="theme-bg-card rounded-2xl relative border theme-border overflow-hidden">
+                            <List strongIos className="!m-0">
+                                <ListInput
+                                    label="End"
+                                    type="time"
+                                    value={endTime}
+                                    onChange={(e) => setEndTime(e.target.value)}
+                                    className="theme-text-base"
+                                />
+                            </List>
+                        </div>
                     </div>
                 )}
 
-                <Block className="!px-0 !my-2">
-                    <div className="my-4">
-                        <p className="text-sm theme-text-muted mb-2 font-medium ml-1">Recurrence</p>
-                        <Segmented rounded strong className="theme-bg-card border theme-border">
-                            <SegmentedButton
-                                active={recurrenceEndType === 'none'}
-                                onClick={() => setRecurrenceEndType('none')}
-                                className={recurrenceEndType === 'none' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
-                            >
-                                One Time
-                            </SegmentedButton>
-                            <SegmentedButton
-                                active={recurrenceEndType !== 'none'}
-                                onClick={() => setRecurrenceEndType('never')}
-                                className={recurrenceEndType !== 'none' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
-                            >
-                                Recurring
-                            </SegmentedButton>
-                        </Segmented>
-                    </div>
+                <div className="mb-container">
+                    <p className="text-sm theme-text-muted mb-2 font-medium">Recurrence</p>
+                    <Segmented rounded strong className="theme-bg-card relative border theme-border">
+                        <SegmentedButton
+                            active={recurrenceEndType === 'none'}
+                            onClick={() => setRecurrenceEndType('none')}
+                            className={recurrenceEndType === 'none' ? 'btn-primary' : 'theme-text-base'}
+                        >
+                            One Time
+                        </SegmentedButton>
+                        <SegmentedButton
+                            active={recurrenceEndType !== 'none'}
+                            onClick={() => setRecurrenceEndType('never')}
+                            className={recurrenceEndType !== 'none' ? 'btn-primary' : 'theme-text-base'}
+                        >
+                            Recurring
+                        </SegmentedButton>
+                    </Segmented>
+                </div>
 
-                    {recurrenceEndType !== 'none' && (
-                        <>
-                            <div className="mb-4">
-                                <Segmented rounded strong className="theme-bg-card border theme-border">
-                                    <SegmentedButton
-                                        active={repeatFrequency === 'week'}
-                                        onClick={() => setRepeatFrequency('week')}
-                                        className={repeatFrequency === 'week' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
+                {recurrenceEndType !== 'none' && (
+                    <>
+                        <div className="mb-container">
+                            <Segmented rounded strong className="theme-bg-card relative border theme-border">
+                                <SegmentedButton
+                                    active={repeatFrequency === 'week'}
+                                    onClick={() => setRepeatFrequency('week')}
+                                    className={repeatFrequency === 'week' ? 'btn-primary' : 'theme-text-base'}
+                                >
+                                    Weekly
+                                </SegmentedButton>
+                                <SegmentedButton
+                                    active={repeatFrequency === 'month'}
+                                    onClick={() => setRepeatFrequency('month')}
+                                    className={repeatFrequency === 'month' ? 'btn-primary' : 'theme-text-base'}
+                                >
+                                    Monthly
+                                </SegmentedButton>
+                                <SegmentedButton
+                                    active={repeatFrequency === 'year'}
+                                    onClick={() => setRepeatFrequency('year')}
+                                    className={repeatFrequency === 'year' ? 'btn-primary' : 'theme-text-base'}
+                                >
+                                    Yearly
+                                </SegmentedButton>
+                            </Segmented>
+                        </div>
+
+                        {repeatFrequency === 'week' && (
+                            <div className="flex gap-1 justify-between mb-container">
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                                    <Button
+                                        key={i}
+                                        clear
+                                        onClick={() => toggleDay(i)}
+                                        className={`!flex-1 !h-10 !rounded-2xl text-sm font-bold transition-colors ${
+                                            repeatDays.includes(i)
+                                                ? 'btn-primary'
+                                                : 'btn-secondary relative border theme-border'
+                                        }`}
                                     >
-                                        Weekly
-                                    </SegmentedButton>
-                                    <SegmentedButton
-                                        active={repeatFrequency === 'month'}
-                                        onClick={() => setRepeatFrequency('month')}
-                                        className={repeatFrequency === 'month' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
-                                    >
-                                        Monthly
-                                    </SegmentedButton>
-                                    <SegmentedButton
-                                        active={repeatFrequency === 'year'}
-                                        onClick={() => setRepeatFrequency('year')}
-                                        className={repeatFrequency === 'year' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
-                                    >
-                                        Yearly
-                                    </SegmentedButton>
-                                </Segmented>
+                                        {d}
+                                    </Button>
+                                ))}
                             </div>
+                        )}
 
-                            {repeatFrequency === 'week' && (
-                                <div className="flex gap-1 justify-between mb-4">
-                                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => toggleDay(i)}
-                                            className={`w-14 h-10 rounded-xl text-sm font-bold transition-colors border ${
-                                                repeatDays.includes(i)
-                                                    ? 'theme-bg-gray text-white theme-border'
-                                                    : 'theme-bg-card theme-text-muted theme-border'
-                                            }`}
-                                        >
-                                            {d}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                        <div className="mb-container theme-bg-card rounded-2xl relative border theme-border overflow-hidden">
+                            <List strongIos className="!m-0">
+                                <ListInput
+                                    label={`Repeat every (${repeatFrequency}s)`}
+                                    type="number"
+                                    min="1"
+                                    value={repeatEvery}
+                                    onChange={(e) => setRepeatEvery(e.target.value)}
+                                    className="theme-text-base"
+                                />
+                            </List>
+                        </div>
 
-                            <div className="mb-4">
-                                <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border">
-                                    <ListInput
-                                        label={`Repeat every (${repeatFrequency}s)`}
-                                        type="number"
-                                        min="1"
-                                        value={repeatEvery}
-                                        onChange={(e) => setRepeatEvery(e.target.value)}
-                                        className="theme-text-base"
-                                    />
-                                </List>
-                            </div>
+                        <p className="text-sm theme-text-muted mb-2 font-medium">Ends</p>
+                        <div className="mb-container">
+                            <Segmented rounded strong className="theme-bg-card relative border theme-border">
+                                <SegmentedButton
+                                    active={recurrenceEndType === 'never'}
+                                    onClick={() => setRecurrenceEndType('never')}
+                                    className={recurrenceEndType === 'never' ? 'btn-primary' : 'theme-text-base'}
+                                >
+                                    Never
+                                </SegmentedButton>
+                                <SegmentedButton
+                                    active={recurrenceEndType === 'on_date'}
+                                    onClick={() => setRecurrenceEndType('on_date')}
+                                    className={recurrenceEndType === 'on_date' ? 'btn-primary' : 'theme-text-base'}
+                                >
+                                    On Date
+                                </SegmentedButton>
+                            </Segmented>
+                        </div>
 
-                            <p className="text-sm theme-text-muted mb-2 font-medium ml-1 mt-4">Ends</p>
-                            <div className="mb-4">
-                                <Segmented rounded strong className="theme-bg-card border theme-border">
-                                    <SegmentedButton
-                                        active={recurrenceEndType === 'never'}
-                                        onClick={() => setRecurrenceEndType('never')}
-                                        className={recurrenceEndType === 'never' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
-                                    >
-                                        Never
-                                    </SegmentedButton>
-                                    <SegmentedButton
-                                        active={recurrenceEndType === 'on_date'}
-                                        onClick={() => setRecurrenceEndType('on_date')}
-                                        className={recurrenceEndType === 'on_date' ? 'theme-bg-gray !text-white' : 'theme-text-base'}
-                                    >
-                                        On Date
-                                    </SegmentedButton>
-                                </Segmented>
-                            </div>
-
-                            <div className="flex flex-row gap-4">
-                                <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border flex-1">
+                        <div className="flex flex-row gap-container">
+                            <div className="theme-bg-card rounded-2xl relative border theme-border overflow-hidden flex-1">
+                                <List strongIos className="!m-0">
                                     <ListInput
                                         label="Start Date"
                                         type="date"
@@ -595,9 +597,11 @@ export default function EditEventPage() {
                                         className="theme-text-base"
                                     />
                                 </List>
+                            </div>
 
-                                {recurrenceEndType === 'on_date' && (
-                                    <List strongIos className="!m-0 rounded-2xl theme-bg-card border theme-border flex-1">
+                            {recurrenceEndType === 'on_date' && (
+                                <div className="theme-bg-card rounded-2xl relative border theme-border overflow-hidden flex-1">
+                                    <List strongIos className="!m-0">
                                         <ListInput
                                             label="End Date"
                                             type="date"
@@ -606,17 +610,17 @@ export default function EditEventPage() {
                                             className="theme-text-base"
                                         />
                                     </List>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </Block>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
 
-                <div className="mt-8 flex flex-row gap-4">
+                <div className="mt-6 flex flex-row gap-container">
                     <Button
                         large
                         rounded
-                        className="theme-bg-secondary theme-text-gray font-bold"
+                        className="btn-secondary relative border theme-border"
                         onClick={() => navigate(-1)}
                     >
                         Cancel
@@ -624,7 +628,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className="theme-bg-primary theme-text-gray border theme-border font-bold"
+                        className="btn-primary"
                         onClick={handleEditAttempt}
                     >
                         Save Changes
@@ -642,11 +646,11 @@ export default function EditEventPage() {
                     <p className="text-xl font-bold mb-4 text-center theme-text-base">Choose Icon</p>
                     
                     {Object.entries(ICON_CATEGORIES).map(([category, icons]) => (
-                        <div key={category} className="mb-4">
+                        <div key={category} className="mb-container">
                             <p className="text-[10px] font-semibold theme-text-muted uppercase tracking-wider mb-2 px-1">
                                 {category}
                             </p>
-                            <div className="rounded-2xl theme-bg-card border theme-border p-2">
+                            <div className="rounded-2xl theme-bg-card relative border theme-border p-2">
                                 <div className="grid grid-cols-10 gap-1">
                                     {icons.map((iconName) => {
                                         const I = LucideIcons[iconName as keyof typeof LucideIcons] as React.ElementType;
@@ -655,9 +659,9 @@ export default function EditEventPage() {
                                             <button
                                                 key={iconName}
                                                 onClick={() => { setIcon(iconName); setIsIconSheetOpen(false); }}
-                                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                                className={`w-8 h-8 rounded-2xl flex items-center justify-center transition-colors ${
                                                     isSelected 
-                                                        ? 'theme-bg-gray text-white' 
+                                                        ? 'btn-primary' 
                                                         : 'hover:theme-bg-secondary theme-text-base'
                                                 }`}
                                             >
@@ -674,7 +678,7 @@ export default function EditEventPage() {
                         large
                         rounded
                         onClick={() => setIsIconSheetOpen(false)}
-                        className="mt-4 theme-bg-secondary theme-text-gray font-bold"
+                        className="mt-4 btn-secondary relative border theme-border"
                     >
                         Close
                     </Button>
@@ -690,7 +694,7 @@ export default function EditEventPage() {
                 <Block className="!mt-0 pt-4 max-h-[70vh] overflow-y-auto">
                     <p className="text-xl font-bold mb-4 text-center theme-text-base">Choose Unit</p>
                     {Object.entries(UNIT_PRESETS).map(([category, units]) => (
-                        <div key={category} className="mb-4">
+                        <div key={category} className="mb-container">
                             <p className="text-xs font-semibold theme-text-muted uppercase tracking-wide mb-2 px-1">
                                 {category}
                             </p>
@@ -699,10 +703,10 @@ export default function EditEventPage() {
                                     <button
                                         key={unit}
                                         onClick={() => { setGoalUnit(unit); setIsUnitSheetOpen(false); }}
-                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all border theme-border ${
+                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                                             goalUnit === unit
-                                                ? 'theme-bg-gray text-white'
-                                                : 'theme-bg-card theme-text-base active:theme-bg-secondary'
+                                                ? 'btn-primary'
+                                                : 'btn-secondary relative border theme-border active:theme-bg-secondary'
                                         }`}
                                     >
                                         {unit}
@@ -715,7 +719,7 @@ export default function EditEventPage() {
                         large
                         rounded
                         onClick={() => setIsUnitSheetOpen(false)}
-                        className="mt-4 theme-bg-secondary theme-text-gray font-bold"
+                        className="mt-4 btn-secondary relative border theme-border"
                     >
                         Close
                     </Button>
@@ -730,7 +734,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className="mb-3 theme-bg-card theme-text-base border theme-border font-bold"
+                        className="mb-3 btn-secondary relative border theme-border"
                         onClick={handleSaveInstance}
                     >
                         This event only
@@ -739,7 +743,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className="mb-3 theme-bg-card theme-text-base border theme-border font-bold"
+                        className="mb-3 btn-secondary relative border theme-border"
                         onClick={handleSaveFollowing}
                     >
                         This and all following
@@ -748,7 +752,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className="mb-3 theme-bg-primary theme-text-gray border theme-border font-bold"
+                        className="mb-3 btn-primary"
                         onClick={handleSaveAll}
                     >
                         All events
@@ -757,7 +761,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className="mt-3 theme-bg-secondary theme-text-gray font-bold"
+                        className="mt-3 btn-secondary relative border theme-border"
                         onClick={() => setIsEditSheetOpen(false)}
                     >
                         Cancel
@@ -775,7 +779,7 @@ export default function EditEventPage() {
                             <Button
                                 large
                                 rounded
-                                className="mb-3 bg-red-100 text-red-600 border border-red-300 font-bold"
+                                className="mb-3 bg-red-100 text-red-600 font-bold"
                                 onClick={() => handleMainDelete('instance')}
                             >
                                 Delete this only
@@ -784,7 +788,7 @@ export default function EditEventPage() {
                             <Button
                                 large
                                 rounded
-                                className="mb-3 bg-red-100 text-red-600 border border-red-300 font-bold"
+                                className="mb-3 bg-red-100 text-red-600 font-bold"
                                 onClick={() => handleMainDelete('future')}
                             >
                                 Delete this and all following
@@ -804,7 +808,7 @@ export default function EditEventPage() {
                     <Button
                         large
                         rounded
-                        className="mt-3 theme-bg-secondary theme-text-gray font-bold"
+                        className="mt-3 btn-secondary relative border theme-border"
                         onClick={() => setIsDeleteSheetOpen(false)}
                     >
                         Cancel

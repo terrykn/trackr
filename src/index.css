@@ -1,6 +1,53 @@
 @import 'tailwindcss';
 @import 'konsta/react/theme.css';
 
+/* Konsta UI Theme Colors - Generates automatic color palette */
+@theme {
+    /* Primary brand colors - neutral beige/warm tones */
+    --color-primary: #1a1a1a;
+    --color-primary-light: #333333;
+    --color-primary-dark: #000000;
+    
+    /* Secondary colors */
+    --color-secondary: #f5f5f0;
+    --color-secondary-light: #fafaf7;
+    --color-secondary-dark: #e8e8e3;
+    
+    /* Accent color */
+    --color-accent: #8b7355;
+    
+    /* Brand-specific custom colors */
+    --color-brand-primary: #f5f4e7;
+    --color-brand-secondary: #ededed;
+    --color-brand-accent: #8b7355;
+    --color-brand-gray: #1a1a1a;
+    --color-brand-light-gray: #d1d1d1;
+    
+    /* Background colors */
+    --color-bg-base: #f6f4ef;
+    --color-bg-card: #ffffff;
+    --color-bg-light-gray: #f5f5f2;
+    
+    /* Text colors */
+    --color-text-base: #1a1a1a;
+    --color-text-muted: #6b6b6b;
+    
+    /* Border colors for hairlines */
+    --color-border: #e1e1dc;
+    --color-border-mute: #e7e7e7;
+    --color-border-dark: #c5c5c0;
+    
+    /* iOS-specific safe area */
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+    --safe-area-inset-right: env(safe-area-inset-right);
+}
+
+test {
+    color: #e1e1dc;
+}
+
 html, body {
     background-color: var(--color-bg-base);
     color: var(--color-text-base);
@@ -12,6 +59,11 @@ html, body {
     position: fixed;
     
     overscroll-behavior: none;
+    
+    /* iOS-specific optimizations */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #root {
@@ -19,42 +71,130 @@ html, body {
     width: 100%;
     display: flex;
     flex-direction: column;
+    background-color: var(--color-bg-base);
 }
 
-@theme {
-    --color-brand-primary: #f5f4e7;
-}
-
-:root {
-    --color-brand-primary: #ffee81;
-    --color-brand-secondary: #f1f1f1;
-    --color-brand-accent: #964319;
-    --color-brand-gray: #332929;
-    --color-brand-light-gray: #cacaca;
-
-    --color-bg-base: #fcfcfc;
-    --color-bg-card: #ffffff;
-    --color-bg-light-gray: #f9f9f9;
-
-    --color-text-base: #222222;
-    --color-text-muted: #858585;
-
-    --color-border: #dedede;
-    --color-border-mute: #f6f1ef;
-}
-
+/* Theme utility classes */
 .theme-bg-base { background-color: var(--color-bg-base); }
 .theme-bg-card { background-color: var(--color-bg-card); }
 .theme-bg-primary { background-color: var(--color-brand-primary); }
 .theme-bg-secondary { background-color: var(--color-brand-secondary); }
 .theme-bg-gray { background-color: var(--color-brand-gray); }
 .theme-bg-light-gray { background-color: var(--color-bg-light-gray); }
+
 .theme-text-base { color: var(--color-text-base); }
 .theme-text-muted { color: var(--color-text-muted); }
 .theme-text-brand { color: var(--color-brand-primary); }
 .theme-text-accent { color: var(--color-brand-accent); }
 .theme-text-gray { color: var(--color-brand-gray); }
 .theme-text-light-gray { color: var(--color-brand-light-gray); }
+
 .theme-border { border-color: var(--color-border); }
 .theme-border-mute { border-color: var(--color-border-mute); }
-.theme-card { background-color: var(--color-bg-card); border: var(--border-1) solid var(--color-border); border-radius: var(--radius-md); }
+.theme-border-dark { border-color: var(--color-border-dark); }
+
+/* Primary Card styling - rounded-2xl with subtle shadow */
+.theme-card {
+    background-color: var(--color-bg-card);
+    border-radius: 1rem;
+    position: relative;
+}
+
+/* Button styles following iOS conventions */
+.btn-primary {
+    background-color: var(--color-brand-gray);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.btn-secondary {
+    background-color: #ffffff;
+    color: var(--color-brand-gray);
+    font-weight: 600;
+    position: relative;
+}
+
+/* Hairline border utilities - Konsta UI style */
+/* Note: Parent element must have relative, absolute, or fixed positioning */
+.hairline-t::before,
+.hairline-b::after,
+.hairline-l::before,
+.hairline-r::after {
+    content: '';
+    position: absolute;
+    background-color: var(--color-border);
+    z-index: 10;
+}
+
+/* Dark hairline variants */
+.hairline-dark::before,
+.hairline-dark::after {
+    background-color: var(--color-border-dark) !important;
+}
+
+/* Event block shadow for DayView */
+.event-card-shadow {
+    box-shadow: 0 0px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Konsta UI overrides for consistent styling */
+.k-ios .k-tabbar {
+    background-color: var(--color-bg-base);
+}
+
+.k-ios .k-tabbar-link-active {
+    color: var(--color-brand-gray);
+}
+
+/* List styling overrides */
+.k-ios .k-list {
+    background: transparent;
+}
+
+/* Card styling - ensure rounded corners */
+.k-ios .k-card {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+/* Safe area padding */
+.pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+}
+
+.pt-safe {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+}
+
+/* Segmented control styling */
+.k-ios .k-segmented {
+    background-color: var(--color-bg-light-gray);
+}
+
+/* Progress bar touch area */
+.progress-area {
+    touch-action: none;
+    user-select: none;
+}
+
+/* Smooth transitions */
+.transition-theme {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Standardized spacing system */
+:root {
+    --spacing-screen: 1.5rem;      /* Space between elements and screen edge */
+    --spacing-container: 1rem; /* Space between containers */
+    --spacing-inner: 0.75rem;     /* Padding inside containers */
+    --spacing-inner-sm: 0.5rem;   /* Smaller inner padding for compact items */
+    --spacing-inner-lg: 1.5rem;
+}
+
+.px-screen { padding-left: var(--spacing-screen); padding-right: var(--spacing-screen); }
+.mx-screen { margin-left: var(--spacing-screen); margin-right: var(--spacing-screen); }
+.gap-container { gap: var(--spacing-container); }
+.mb-container { margin-bottom: var(--spacing-container); }
+.p-inner { padding: var(--spacing-inner); }
+.p-inner-sm { padding: var(--spacing-inner-sm); }
+.p-inner-lg { padding: var(--spacing-inner-lg); }

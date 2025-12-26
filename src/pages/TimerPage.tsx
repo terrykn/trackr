@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Page, Sheet, Block, Button } from "konsta/react";
+import { Page, Sheet, Block, Button, Card, List, ListItem } from "konsta/react";
 import { Play, Pause, RotateCcw, Square, Plus, X } from 'lucide-react';
 import BottomNav from "../components/BottomNav";
 import { getEvents, updateEventProgress, getEventProgress, lightenColor, darkenColor } from '../utils';
@@ -201,23 +201,23 @@ export default function Timer() {
     return (
         <Page className="relative flex flex-col min-h-screen theme-bg-base">
             {/* Fixed Mode Toggle at Top */}
-            <div className="absolute top-8 left-0 right-0 z-10 px-6">
+            <div className="absolute top-8 left-0 right-0 z-10 px-screen">
                 <div className="flex justify-center">
-                    <div className="rounded-full p-1 flex gap-1 border theme-border theme-bg-card">
+                    <div className="rounded-full p-1 theme-bg-light-gray relative border theme-border inline-flex flex-row gap-1">
                         <button
                             onClick={() => setMode('focus')}
-                            className={`px-6 py-2 rounded-full text-sm font-semibold transition-all border ${mode === 'focus'
-                                    ? 'theme-bg-gray text-white border-transparent'
-                                    : 'theme-text-muted border-transparent'
+                            className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-all ${mode === 'focus'
+                                    ? 'btn-primary'
+                                    : 'theme-text-muted'
                                 }`}
                         >
                             Focus
                         </button>
                         <button
                             onClick={() => setMode('break')}
-                            className={`px-6 py-2 rounded-full text-sm font-semibold transition-all border ${mode === 'break'
-                                    ? 'theme-bg-gray text-white border-transparent'
-                                    : 'theme-text-muted border-transparent'
+                            className={`px-5 py-1.5 rounded-full text-sm font-semibold transition-all ${mode === 'break'
+                                    ? 'btn-primary'
+                                    : 'theme-text-muted'
                                 }`}
                         >
                             Break
@@ -231,9 +231,10 @@ export default function Timer() {
                 <div className="flex flex-col items-center">
                     {/* Add Task Button */}
                     <div className="mb-6">
-                        <button
+                        <Button
+                            clear
                             onClick={() => setShowTaskPicker(true)}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-2xl text-sm font-medium border theme-border active:scale-95 transition-transform"
+                            className="flex items-center gap-2 !px-4 !py-1.5 rounded-2xl text-sm font-medium relative active:scale-95 transition-transform theme-bg-card border theme-border"
                             style={selectedTask ? {
                                 backgroundColor: lightenColor(selectedTask.color, 0.75)
                             } : undefined}
@@ -259,10 +260,10 @@ export default function Timer() {
                             ) : (
                                 <span className="theme-text-muted flex items-center gap-2">
                                     <Plus size={16} />
-                                    Add Task
+                                    Task
                                 </span>
                             )}
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Timer Display */}
@@ -278,70 +279,77 @@ export default function Timer() {
                     {/* Preset Time Badges */}
                     <div className="flex justify-center gap-2 mt-6 mb-12">
                         {presetOptions.map(minutes => (
-                            <button
+                            <Button
                                 key={minutes}
+                                clear
                                 onClick={() => setPresetTime(minutes)}
-                                className={`px-3.5 py-1.5 rounded-2xl text-sm font-semibold transition-all border ${timerState === 'idle'
+                                className={`!px-3.5 !py-1.5 !rounded-2xl text-sm font-semibold transition-all relative ${timerState === 'idle'
                                         ? activePreset === minutes
-                                            ? 'theme-bg-gray text-white border-transparent'
-                                            : 'theme-text-base theme-border active:scale-95'
-                                        : 'theme-text-muted theme-border opacity-50'
+                                            ? 'btn-primary'
+                                            : 'btn-secondary border theme-border active:scale-95'
+                                        : 'theme-text-muted opacity-50'
                                     }`}
                                 disabled={timerState !== 'idle'}
                             >
                                 {minutes}
-                            </button>
+                            </Button>
                         ))}
                     </div>
 
                     {/* Control Buttons */}
                     <div className="flex justify-center gap-4">
                         {timerState === 'idle' && (
-                            <button
+                            <Button
+                                clear
                                 onClick={handleStart}
-                                className="w-16 h-16 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform border theme-border bg-green-500"
+                                className="!w-16 !h-16 !rounded-full flex items-center justify-center text-white active:scale-95 transition-transform bg-green-500"
                             >
                                 <Play size={24} fill="white" />
-                            </button>
+                            </Button>
                         )}
 
                         {timerState === 'running' && (
                             <>
-                                <button
+                                <Button
+                                    clear
                                     onClick={handlePause}
-                                    className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform border theme-border"
+                                    className="!w-16 !h-16 bg-orange-500 !rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
                                 >
                                     <Pause size={24} fill="white" />
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    clear
                                     onClick={handleStop}
-                                    className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform border theme-border"
+                                    className="!w-16 !h-16 bg-red-500 !rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
                                 >
                                     <Square size={20} fill="white" />
-                                </button>
+                                </Button>
                             </>
                         )}
 
                         {timerState === 'paused' && (
                             <>
-                                <button
+                                <Button
+                                    clear
                                     onClick={handleStart}
-                                    className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform border theme-border"
+                                    className="!w-16 !h-16 bg-green-500 !rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
                                 >
                                     <Play size={24} fill="white" />
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    clear
                                     onClick={handleStop}
-                                    className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform border theme-border"
+                                    className="!w-16 !h-16 bg-red-500 !rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
                                 >
                                     <Square size={20} fill="white" />
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    clear
                                     onClick={handleReset}
-                                    className="w-16 h-16 theme-bg-card rounded-full flex items-center justify-center theme-text-muted active:scale-95 transition-transform border theme-border"
+                                    className="!w-16 !h-16 theme-bg-card !rounded-full flex items-center justify-center theme-text-muted active:scale-95 transition-transform relative border theme-border"
                                 >
                                     <RotateCcw size={22} />
-                                </button>
+                                </Button>
                             </>
                         )}
                     </div>
@@ -358,30 +366,29 @@ export default function Timer() {
                     <p className="text-xl font-bold mb-4 text-center theme-text-base">Select Task</p>
 
                     {availableTasks.length === 0 ? (
-                        <div className="rounded-2xl theme-bg-card border theme-border p-6 text-center">
+                        <div className="rounded-2xl theme-bg-card relative border theme-border p-6 text-center">
                             <p className="theme-text-muted">No tasks available for today</p>
                         </div>
                     ) : (
                         <>
                             {/* Time-based tasks */}
                             {availableTasks.filter(t => isTimeUnit(t.goalUnit)).length > 0 && (
-                                <div className="mb-4">
+                                <div className="mb-container">
                                     <p className="text-[10px] font-semibold theme-text-muted uppercase tracking-wider mb-2 px-1">
                                         TIME-BASED TASKS
                                     </p>
-                                    <div className="rounded-2xl theme-bg-card border theme-border p-2 space-y-1">
+                                    <div className="rounded-2xl theme-bg-card relative border theme-border p-2 space-y-1">
                                         {availableTasks.filter(t => isTimeUnit(t.goalUnit)).map(task => (
                                             <button
                                                 key={task.id}
                                                 onClick={() => setSelectedTask(task)}
-                                                className={`w-full text-left px-2 py-2.5 rounded-xl transition-all flex items-center gap-3 ${selectedTask?.id === task.id
-                                                        ? 'border-current'
-                                                        : 'border-transparent active:theme-bg-secondary'
+                                                className={`w-full text-left px-2 py-2.5 rounded-lg transition-all flex items-center gap-3 ${selectedTask?.id === task.id
+                                                        ? 'theme-bg-light-gray'
+                                                        : 'active:theme-bg-secondary'
                                                     }`}
-                                                style={selectedTask?.id === task.id ? { borderColor: task.color } : undefined}
                                             >
                                                 <div
-                                                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                                                     style={{ backgroundColor: lightenColor(task.color, 0.3) }}
                                                 >
                                                     <EventIcon name={task.icon} size={18} />
@@ -395,7 +402,7 @@ export default function Timer() {
                                                     </div>
                                                 </div>
                                                 <div
-                                                    className={`w-6 h-6 rounded-full flex-shrink-0 border-2 flex items-center justify-center`}
+                                                    className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center border-2"
                                                     style={{ borderColor: darkenColor(task.color, 0.15) }}
                                                 >
                                                     {selectedTask?.id === task.id && (
@@ -413,23 +420,22 @@ export default function Timer() {
 
                             {/* Non-time-based tasks */}
                             {availableTasks.filter(t => !isTimeUnit(t.goalUnit)).length > 0 && (
-                                <div className="mb-4">
+                                <div className="mb-container">
                                     <p className="text-[10px] font-semibold theme-text-muted uppercase tracking-wider mb-2 px-1">
                                         OTHER TASKS
                                     </p>
-                                    <div className="rounded-2xl theme-bg-card border theme-border p-2 space-y-1">
+                                    <div className="rounded-2xl theme-bg-card relative border theme-border p-2 space-y-1">
                                         {availableTasks.filter(t => !isTimeUnit(t.goalUnit)).map(task => (
                                             <button
                                                 key={task.id}
                                                 onClick={() => setSelectedTask(task)}
-                                                className={`w-full text-left px-2 py-2.5 rounded-xl transition-all flex items-center gap-3 ${selectedTask?.id === task.id
-                                                        ? 'border-current'
-                                                        : 'border-transparent active:theme-bg-secondary'
+                                                className={`w-full text-left px-2 py-2.5 rounded-lg transition-all flex items-center gap-3 ${selectedTask?.id === task.id
+                                                        ? 'theme-bg-light-gray'
+                                                        : 'active:theme-bg-secondary'
                                                     }`}
-                                                style={selectedTask?.id === task.id ? { borderColor: task.color } : undefined}
                                             >
                                                 <div
-                                                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                                                     style={{ backgroundColor: lightenColor(task.color, 0.3) }}
                                                 >
                                                     <EventIcon name={task.icon} size={18} />
@@ -444,7 +450,7 @@ export default function Timer() {
                                                     </div>
                                                 </div>
                                                 <div
-                                                    className={`w-6 h-6 rounded-full flex-shrink-0 border-2 flex items-center justify-center`}
+                                                    className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center border-2"
                                                     style={{ borderColor: darkenColor(task.color, 0.15) }}
                                                 >
                                                     {selectedTask?.id === task.id && (
@@ -466,7 +472,7 @@ export default function Timer() {
                         large
                         rounded
                         onClick={() => setShowTaskPicker(false)}
-                        className="mt-4 theme-bg-secondary theme-text-gray font-bold"
+                        className="mt-4 btn-secondary relative border theme-border"
                     >
                         Close
                     </Button>
@@ -491,7 +497,7 @@ export default function Timer() {
                                 max="23"
                                 value={customHours}
                                 onChange={(e) => setCustomHours(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
-                                className="w-16 h-12 text-2xl text-center rounded-2xl outline-none border theme-border theme-text-base theme-bg-card"
+                                className="w-16 h-12 text-2xl text-center rounded-2xl outline-none theme-text-base theme-bg-card relative border theme-border"
                             />
                         </div>
                         <div className="flex items-end pb-3">
@@ -505,7 +511,7 @@ export default function Timer() {
                                 max="59"
                                 value={customMinutes}
                                 onChange={(e) => setCustomMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                                className="w-16 h-12 text-2xl text-center rounded-2xl outline-none border theme-border theme-text-base theme-bg-card"
+                                className="w-16 h-12 text-2xl text-center rounded-2xl outline-none theme-text-base theme-bg-card relative border theme-border"
                             />
                         </div>
                         <div className="flex items-end pb-3">
@@ -519,7 +525,7 @@ export default function Timer() {
                                 max="59"
                                 value={customSeconds}
                                 onChange={(e) => setCustomSeconds(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                                className="w-16 h-12 text-2xl text-center rounded-2xl outline-none border theme-border theme-text-base theme-bg-card"
+                                className="w-16 h-12 text-2xl text-center rounded-2xl outline-none theme-text-base theme-bg-card relative border theme-border"
                             />
                         </div>
                     </div>
@@ -529,7 +535,7 @@ export default function Timer() {
                             large
                             rounded
                             onClick={() => setShowTimePicker(false)}
-                            className="flex-1 theme-bg-secondary theme-text-gray font-bold border theme-border"
+                            className="flex-1 btn-secondary relative border theme-border"
                         >
                             Cancel
                         </Button>
@@ -537,7 +543,7 @@ export default function Timer() {
                             large
                             rounded
                             onClick={handleCustomTimeSet}
-                            className="flex-1 theme-bg-primary theme-text-gray font-bold border theme-border"
+                            className="flex-1 btn-primary"
                         >
                             Set Timer
                         </Button>
@@ -558,12 +564,10 @@ export default function Timer() {
                     </p>
 
                     {selectedTask && isTimeUnit(selectedTask.goalUnit) && (
-                        <div
-                            className="rounded-2xl p-4 mb-6 border theme-border theme-bg-card"
-                        >
+                        <div className="rounded-2xl p-inner mb-container theme-bg-card relative border theme-border">
                             <div className="flex items-center gap-3">
                                 <div
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                                     style={{ backgroundColor: lightenColor(selectedTask.color, 0.3) }}
                                 >
                                     <EventIcon name={selectedTask.icon} size={20} />
@@ -573,9 +577,7 @@ export default function Timer() {
                                     <p className="font-semibold theme-text-base">{selectedTask.name}</p>
                                 </div>
                             </div>
-                            <div
-                                className="mt-3 pt-3 border-t text-center theme-border"
-                            >
+                            <div className="mt-3 pt-3 text-center relative hairline-t">
                                 <span className="text-lg font-bold theme-text-gray">
                                     +{convertToUnit(elapsedTime, selectedTask.goalUnit)} {selectedTask.goalUnit}
                                 </span>
@@ -588,7 +590,7 @@ export default function Timer() {
                             large
                             rounded
                             onClick={handleFinishAndSave}
-                            className="font-bold border theme-bg-primary theme-border theme-text-gray"
+                            className="btn-primary"
                         >
                             Save Progress
                         </Button>
@@ -596,7 +598,7 @@ export default function Timer() {
                             large
                             rounded
                             onClick={handleFinishWithoutSaving}
-                            className="theme-bg-secondary theme-text-gray font-bold"
+                            className="btn-secondary relative border theme-border"
                         >
                             Discard
                         </Button>

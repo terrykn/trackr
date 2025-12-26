@@ -68,9 +68,9 @@ export default function WeeklySummaryCard({ currentDate }: { currentDate: Date }
     }, [weekDays, allEvents]);
 
     return (
-        <div className="theme-bg-card rounded-2xl p-3.5 mx-4 mt-4 border theme-border">
+        <div className="rounded-2xl p-inner mx-screen mb-container theme-bg-card relative border theme-border">
             <h3 className="text-sm font-semibold theme-text-muted uppercase tracking-wide mb-3">Weekly Summary</h3>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-container">
                 <div className="text-center">
                     <div className="text-2xl font-bold theme-text-gray">{stats.completedTasks}</div>
                     <div className="text-xs theme-text-muted">Done</div>

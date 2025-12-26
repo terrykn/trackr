@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react"
 import {
   Page,
-  Block,
   List,
   ListInput,
   Button,
-  BlockFooter
+  BlockFooter,
+  Card
 } from "konsta/react"
 
 import {
@@ -62,25 +62,26 @@ export default function LoginPage() {
 
   if (user) {
     return (
-      <Page className="flex items-center justify-center min-h-screen">
-        <Block strongIos className="p-6 rounded-2xl text-center">
-          <h1 className="text-xl">Welcome, {user.email}</h1>
-        </Block>
+      <Page className="flex items-center justify-center min-h-screen theme-bg-base">
+        <Card className="!rounded-2xl !p-6 text-center theme-bg-card relative border theme-border">
+          <h1 className="text-xl theme-text-base">Welcome, {user.email}</h1>
+        </Card>
       </Page>
     )
   }
 
-  return (
-    <Page className="flex flex-col justify-center min-h-screen px-2">
-      <Block strongIos className="mx-auto rounded-2xl p-6 w-full max-w-xs md:max-w-md mb-0">
-        <h1 className="text-2xl text-center mb-4">{isLogin ? "Login" : "Sign Up"}</h1>
-        <List>
+return (
+    <Page className="flex flex-col items-center justify-center min-h-screen px-screen theme-bg-base">
+      <Card className="!rounded-2xl !p-6 w-full max-w-xs md:max-w-md mb-0 theme-bg-card relative border theme-border">
+        <h1 className="text-2xl text-center mb-4 theme-text-base font-bold">{isLogin ? "Login" : "Sign Up"}</h1>
+        <List strongIos className="!m-0">
           <ListInput
             label="Email"
             type="email"
             placeholder="Enter email"
             value={email}
             onInput={(e) => setEmail(e.target.value)}
+            className="theme-text-base"
           />
           <ListInput
             label="Password"
@@ -88,6 +89,7 @@ export default function LoginPage() {
             placeholder="Enter password"
             value={password}
             onInput={(e) => setPassword(e.target.value)}
+            className="theme-text-base"
           />
           {!isLogin && (
             <ListInput
@@ -96,16 +98,17 @@ export default function LoginPage() {
               placeholder="Confirm password"
               value={confirmPassword}
               onInput={(e) => setConfirmPassword(e.target.value)}
+              className="theme-text-base"
             />
           )}
         </List>
 
-        {error && <BlockFooter className="text-red-500">{error}</BlockFooter>}
+        {error && <BlockFooter className="text-red-500 text-center mt-2">{error}</BlockFooter>}
 
         <Button
-          roundedIos
           large
-          className="mt-4"
+          rounded
+          className="mt-4 btn-primary"
           disabled={loading}
           onClick={handleEmailAuth}
         >
@@ -113,20 +116,19 @@ export default function LoginPage() {
         </Button>
 
         <Button
-          roundedIos
           large
-          outline
-          className="mt-2"
+          rounded
+          className="mt-2 btn-secondary relative border theme-border"
           onClick={signInWithGoogle}
         >
           Continue with Google
         </Button>
-      </Block>
+      </Card>
 
-      <BlockFooter className="mx-auto max-w-xs md:max-w-md mt-4 text-center">
-        {isLogin ? "Don’t have an account?" : "Already have an account?"}{" "}
+      <BlockFooter className="mx-auto max-w-xs md:max-w-md mt-4 text-center theme-text-muted">
+        {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
         <span
-          className="text-primary cursor-pointer ml-1"
+          className="theme-text-gray cursor-pointer ml-1 font-semibold"
           onClick={() => {
             setIsLogin(!isLogin)
             setError(null)

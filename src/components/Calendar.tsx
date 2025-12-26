@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Sunrise, Sun, Moon, Calendar as CalendarIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { Card, List, Navbar } from 'konsta/react';
 import {
     format, addDays, subDays, startOfWeek, isSameDay,
     parseISO, isWithinInterval, getDay, differenceInCalendarWeeks,
@@ -42,7 +43,7 @@ const useSwipe = (onSwipeLeft: () => void, onSwipeRight: () => void) => {
 
 const EventIcon = ({ name, size = 18 }: { name: string, size?: number }) => {
     const Icon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType;
-    return Icon ? <Icon size={size} strokeWidth={1.5} /> : null;
+    return Icon ? <Icon size={size} strokeWidth={2} /> : null;
 };
 
 const doesEventOccurOnDate = (event: HabitEvent, date: Date) => {
@@ -125,45 +126,37 @@ export function DayViewHeader({ currentDate, onDateChange }: { currentDate: Date
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
     const swipeHandlers = useSwipe(
-        () => onDateChange(addDays(currentDate, 7)), 
+        () => onDateChange(addDays(currentDate, 7)),
         () => onDateChange(subDays(currentDate, 7))
     );
 
     return (
         <div
-            className="pb-2 pt-3 px-4 theme-bg-base border-b theme-border select-none"
+            className="w-full pb-4 pt-1 select-none px-1 bg-transparent"
             {...swipeHandlers}
         >
             <div className="flex justify-between items-center gap-1">
                 {weekDays.map((date) => {
                     const isSelected = isSameDay(date, currentDate);
                     const isToday = isSameDay(date, new Date());
-                    // Check if streak exists for this specific day
-                    const hasStreak = isDailyCompletionMet(date);
 
                     return (
                         <button
                             key={date.toString()}
                             onClick={() => onDateChange(date)}
-                            className={`relative flex flex-col items-center justify-center w-11 h-11 rounded-2xl transition-all
-                                ${isSelected
-                                    ? 'theme-bg-primary theme-border theme-text-gray border'
-                                    : isToday
-                                        ? 'theme-bg-secondary theme-border-mute border theme-text-gray'
-                                        : 'border-transparent theme-text-gray'
-                                }`}
+                            className="relative flex flex-col items-center justify-center w-11 h-11 transition-all mt-7"
                         >
-                            {hasStreak && (
-                                <div className="absolute -top-3">
-                                    <LucideIcons.Check size={12} className="text-green-500" />
-                                </div>
-                            )}
                             <span className="text-[9px] font-semibold uppercase mb-0.5">
                                 {format(date, 'EEE')}
                             </span>
-                            <span className="text-lg font-bold leading-none">{format(date, 'd')}</span>
+                            <div className={`text-lg font-bold leading-none rounded-lg p-1.5 ${isSelected
+                                ? 'theme-bg-gray text-white border'
+                                : isToday
+                                    ? 'theme-bg-secondary theme-text-gray border theme-border-mute'
+                                    : 'theme-text-gray'
+                                }`}>{format(date, 'd')}
 
-                            
+                            </div>
                         </button>
                     );
                 })}
@@ -236,31 +229,25 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
         };
     }, [isDragging]);
 
-    const isCompleted = currentProgress >= goal;
-
     return (
         <div
-            className={`relative overflow-hidden rounded-2xl mb-3 cursor-pointer transition-all border theme-border
+            className={`rounded-2xl mb-container cursor-pointer transition-all theme-bg-card event-card-shadow overflow-hidden
                 ${!isDragging ? 'active:scale-[0.98]' : ''}
             `}
-            style={{ backgroundColor: lightenColor(event.color, 0.75) }}
             onClick={() => onEventClick(event.id)}
         >
-            <div className="relative z-10 p-4">
+            <div className="relative z-10 p-inner-lg">
                 {/* Header row */}
-                <div className="flex justify-between items-start mb-4">
-                    {/* Changed items-start to items-center for vertical centering with icon */}
+                <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 theme-text-gray border border-theme"
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 theme-text-gray"
                             style={{ backgroundColor: lightenColor(event.color, 0.15) }}
                         >
-                            <EventIcon name={event.icon} size={20} />
+                            <EventIcon name={event.icon} size={24} />
                         </div>
-                        {/* Added justify-center and reduced gap with leading-tight */}
                         <div className="flex flex-col justify-center flex-1 min-w-0 gap-0.5">
                             <div className="flex flex-row items-center justify-between w-full gap-3">
-                                {/* Removed mb-0.5, added leading-tight */}
                                 <span className="theme-text-base text-base font-semibold truncate leading-tight">{event.name}</span>
                                 {event.repeatFrequency === 'week' && (
                                     <div className="flex gap-1.5 flex-shrink-0">
@@ -291,46 +278,32 @@ export function DayEventBlock({ event, date, onEventClick }: { event: HabitEvent
                     </div>
                 </div>
 
-                {/* Draggable Progress Bar Section */}
-                <div className="flex items-center">
+                {/* Draggable Progress Bar Section - Full Width */}
+                <div
+                    ref={sliderRef}
+                    className={`progress-area relative w-full h-9 rounded-2xl overflow-hidden cursor-ew-resize touch-none select-none transition-transform duration-150 origin-center
+                        ${isDragging ? 'scale-y-[1.12]' : ''}
+                    `}
+                    onMouseDown={handleStart}
+                    onTouchStart={handleStart}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ backgroundColor: lightenColor('#ececec', 0.5) }}
+                >
+                    {/* Fill Layer */}
                     <div
-                        ref={sliderRef}
-                        className={`progress-area relative flex-1 h-10 theme-bg-secondary border theme-border rounded-2xl overflow-hidden cursor-ew-resize touch-none select-none transition-transform duration-150 origin-center
-                            ${isDragging ? 'scale-y-[1.12]' : ''}
-                        `}
-                        onMouseDown={handleStart}
-                        onTouchStart={handleStart}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Fill Layer */}
-                        <div
-                            className="absolute top-0 left-0 bottom-0 transition-all ease-out"
-                            style={{
-                                width: `${Math.min(100, progressPercent)}%`,
-                                backgroundColor: event.color,
-                                transitionDuration: isDragging ? '0ms' : '200ms',
-                                opacity: 0.8
-                            }}
-                        />
+                        className="absolute top-0 left-0 bottom-0 transition-all ease-out"
+                        style={{
+                            width: `${Math.min(100, progressPercent)}%`,
+                            backgroundColor: event.color,
+                            transitionDuration: isDragging ? '0ms' : '200ms',
+                            opacity: 0.8
+                        }}
+                    />
 
-                        {/* Text Layer (Goal info) */}
-                        <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
-                            <span className={`text-xs font-medium transition-colors duration-200`}>
-                                Goal: <span className="font-bold">{currentProgress}/{event.goalAmount} {event.goalUnit}</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Percentage/Status (Outside) */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0 min-w-[70px] justify-end">
-                        <div
-                            className="w-2.5 h-2.5 rounded-full border theme-border"
-                            style={{ backgroundColor: isCompleted ? '#22c55e' : event.color }}
-                        />
-                        <span
-                            className={`text-[11px] font-bold ${isCompleted ? 'text-green-600' : 'theme-text-muted'}`}
-                        >
-                            {isCompleted ? 'DONE' : `${Math.round(progressPercent)}%`}
+                    {/* Centered Progress Text */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="text-xs font-bold theme-text-gray">
+                            {currentProgress}/{event.goalAmount} {event.goalUnit}
                         </span>
                     </div>
                 </div>
@@ -379,25 +352,27 @@ export function DayView({ currentDate }: { currentDate: Date }) {
 
     const Section = ({ title, icon, items }: { title: string, icon: React.ReactNode, items: HabitEvent[] }) => (
         items.length > 0 ? (
-            <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3 pl-1">
+            <div className="mb-container">
+                <div className="flex items-center gap-2 mb-2 mt-2">
                     <span className="theme-text-gray">{icon}</span>
                     <span className="text-xs font-semibold uppercase tracking-wider theme-text-gray">{title}</span>
                 </div>
-                {items.map(e => (
-                    <DayEventBlock
-                        key={e.id}
-                        event={e}
-                        date={currentDate}
-                        onEventClick={handleEventClick}
-                    />
-                ))}
+                <List className="!m-0 !p-0">
+                    {items.map(e => (
+                        <DayEventBlock
+                            key={e.id}
+                            event={e}
+                            date={currentDate}
+                            onEventClick={handleEventClick}
+                        />
+                    ))}
+                </List>
             </div>
         ) : null
     );
 
     return (
-        <div className="px-4 py-4 h-full overflow-y-auto pb-24 theme-bg-base">
+        <div className="px-screen py-3 h-full overflow-y-auto pb-24">
             {allDayEvents.length === 0 && timedEvents.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full">
                     <div className="mb-4">
@@ -428,7 +403,7 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
 
     return (
         <div
-            className="theme-bg-base select-none"
+            className="select-none relative w-full pb-2"
             {...swipeHandlers}
             style={{ scrollbarGutter: 'stable' }}
         >
@@ -437,29 +412,20 @@ export function WeekViewHeader({ currentDate, onDateChange }: { currentDate: Dat
 
                 {days.map(d => {
                     const isToday = isSameDay(d, new Date());
-                    // Check if streak exists for this specific day
-                    const hasStreak = isDailyCompletionMet(d);
 
                     return (
                         <div
                             key={d.toString()}
-                            className="text-center pb-1 pt-1 min-w-0 cursor-pointer transition-colors active:opacity-60 flex flex-col items-center"
+                            className="text-center pb-1 pt-7 min-w-0 cursor-pointer flex flex-col items-center"
                             onClick={() => onDateChange(d)}
                         >
                             <div className="text-[9px] font-semibold uppercase">
                                 {format(d, 'EEE')}
                             </div>
-                            <div className={`text-md font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all relative
+                            <div className={`text-md font-bold w-8 h-7 flex items-center justify-center rounded-lg transition-all relative
                                 ${isToday ? 'theme-bg-secondary theme-text-base' : 'theme-text-base'}`}
                             >
                                 {format(d, 'd')}
-                                
-                                {/* Fire Icon for Streak - positioned absolute to the circle */}
-                                {hasStreak && (
-                                    <div className="absolute -bottom-1.5">
-                                        <LucideIcons.Check size={12}  />
-                                    </div>
-                                )}
                             </div>
                         </div>
                     );
@@ -473,9 +439,9 @@ export function AllDayWeekEventBlock({ event, date, onEventClick }: { event: Hab
     const progress = getProgressPercent(event, format(date, 'yyyy-MM-dd'));
     return (
         <div
-            className="h-8 rounded-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-all border relative"
+            className="h-8 rounded-lg overflow-hidden cursor-pointer active:scale-[0.98] transition-all relative event-card-shadow"
             onClick={(e) => { e.stopPropagation(); onEventClick(event.id, date); }}
-            style={{ borderColor: darkenColor(event.color, 0.15), backgroundColor: lightenColor(event.color, 0.6), marginRight: "4px" }}
+            style={{ backgroundColor: lightenColor(event.color, 0.6), marginRight: "4px" }}
         >
             <div className="absolute top-0.5 right-0.5 z-20 theme-text-gray opacity-60">
                 <EventIcon name={event.icon} size={10} />
@@ -501,7 +467,7 @@ export function WeekEventBlock({ event, date, onEventClick, style }: {
 
     return (
         <div
-            className="absolute overflow-hidden cursor-pointer active:scale-[0.98] transition-transform rounded-lg border"
+            className="absolute overflow-hidden cursor-pointer active:scale-[0.98] transition-transform rounded-lg event-card-shadow"
             title={`${event.name} (${event.startTime} - ${event.endTime})`}
             onClick={(e) => {
                 e.stopPropagation();
@@ -509,7 +475,6 @@ export function WeekEventBlock({ event, date, onEventClick, style }: {
             }}
             style={{
                 ...style,
-                borderColor: darkenColor(event.color, 0.15),
                 background: lightenColor(event.color, 0.6),
             }}
         >
@@ -648,12 +613,12 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
 
     return (
         <div
-            className="h-full overflow-y-auto pb-27 theme-bg-base"
+            className="h-full overflow-y-auto pb-27"
             style={{ scrollbarGutter: 'stable' }}
         >
             {/* All-day events section */}
             {maxAllDayEvents > 0 && (
-                <div>
+                <div className="relative">
                     <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] py-2">
                         <div>
                         </div>
@@ -685,7 +650,7 @@ export function WeekView({ currentDate }: { currentDate: Date }) {
                             <span className="-translate-y-1/2">{hour}:00</span>
                         </div>
                         {days.map(d => (
-                            <div key={d.toString()} className="border-l border-t relative min-w-0 theme-border-mute" />
+                            <div key={d.toString()} className="relative min-w-0 border-l border-t" style={{ borderColor: 'var(--color-brand-secondary)' }} />
                         ))}
                     </div>
                 ))}
